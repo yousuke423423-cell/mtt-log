@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
-window.MTT_BUILD="2026-11-25 11:26";
+window.MTT_BUILD="2026-11-25 11:29";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -411,7 +411,7 @@ function rimpHTML(){
   <div class="lab">貼り付けるレンジのアクション</div><div class="rsel k3">${['r','a','c'].map(x=>`<button class="chip ${ui.rimp===x?'on':''}" data-a="rimp-act" data-v="${x}">${L[x]}</button>`).join('')}</div>
   <textarea id="rimpTa" rows="5" style="margin-top:10px" placeholder="AA,KK,AKs:0.5,A5s+,TT+" aria-label="レンジのテキスト"></textarea>
   <button class="btn navy" data-a="rimp-go" style="width:100%;margin-top:10px">このアクションとして取り込む</button>
-  <p class="fine">「AA,KK,AKs:0.5」のように、ハンドと頻度（0〜1）をカンマで区切った形式を読み取ります。「TT+」「A5s+」も使えます。アクションごとに分けて取り込んでください。</p>`;
+  <p class="fine">GTO Wizardの「レンジ」タブにある「コピー」ボタンでコピーした文字列を、そのまま貼り付けられます。「AA,KK,AKs:0.5」「TT+」「A5s+」の形式も読み取ります。アクションごとに分けて取り込んでください。</p>`;
 }
 function playerHTML(){
   const p=S.players[ui.pid];if(!p)return shead('プレイヤー');
@@ -667,6 +667,11 @@ function paint(idx){
 }
 function parseRange(text){ // "AA,KK,AKs:0.5,A5s+,TT+" -> {handIndex: percent}
   const out={},R=RANKS;
+  // combo-level text such as "AhKh: 0.5,AsKs: 1,..." (one entry per two-card combination) is averaged per hand
+  const cre=/([2-9TJQKA])([cdhs])([2-9TJQKA])([cdhs])\s*:\s*([\d.]+)/gi,acc={};let cm,nc=0;
+  while((cm=cre.exec(String(text)))){let a=R.indexOf(cm[1].toUpperCase()),b=R.indexOf(cm[3].toUpperCase());if(a<0||b<0)continue;if(a>b)[a,b]=[b,a];
+    const idx=a===b?a*13+a:cm[2].toLowerCase()===cm[4].toLowerCase()?a*13+b:b*13+a;let w=parseFloat(cm[5]);if(!(w>=0))continue;if(w>1)w/=100;acc[idx]=(acc[idx]||0)+Math.min(1,w);nc++}
+  if(nc){for(const k in acc)out[k]=Math.round(acc[k]/combos(+k)*100);return out}
   for(const tok of String(text).replace(/\s+/g,'').split(/[,;、]+/)){
     const m=tok.match(/^([AKQJT2-9])([AKQJT2-9])([so])?(\+)?(?::([\d.]+))?$/i);if(!m)continue;
     let w=m[5]?parseFloat(m[5]):1;if(w>1)w/=100;const pct=Math.round(Math.max(0,Math.min(1,w))*100);
