@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
-window.MTT_BUILD="2026-11-25 11:34";
+window.MTT_BUILD="2026-11-25 11:36";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -276,6 +276,7 @@ nav button.on{background:var(--navy);color:#fff}
 <div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="row"><button class="btn" data-a="modal-no">キャンセル</button><button class="btn pri" id="modalOk" data-a="modal-ok">OK</button></div></div></div>
 <div class="toast" id="toast" hidden role="status"></div>
 <input type="file" id="rimgIn" accept="image/*" hidden>
+<input type="file" id="rimgMulti" accept="image/*" multiple hidden>
 <div class="viewer" id="viewer" hidden><div class="vscroll" id="vscroll"><img id="vimg" alt=""></div><button class="vclose" data-a="vclose">閉じる</button><button class="vzoom" data-a="vzoom" id="vzoomBtn">拡大</button></div>
 
 <script>
@@ -681,6 +682,8 @@ function renderRange(){
     ${hasImg?'':'<button class="btn" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button>'}`:''}
   </section>
   <section class="card"><h2>レンジデータ<span>登録済み ${rcount()} / ${RPOS.length*RBB.length*2+RBB.length*21} 枚</span></h2>
+    <button class="btn navy" data-a="rimg-multi" style="width:100%">この条件のスクショをまとめて登録（最大8枚）</button>
+    <p class="fine" style="margin:6px 0 10px">${esc(rtitle())} のスクリーンショットを、10BB → 80BB の順に撮ってまとめて選ぶと、撮った順にスタックへ割り当てます。</p>
     <div class="row"><button class="btn" data-a="rfile">ファイルから取り込む</button><button class="btn" data-a="rcopy">全データをコピー</button></div><input type="file" id="rfileIn" accept=".json,.txt,application/json,text/plain" hidden>
     <p class="fine">スクリーンショットとレンジは、この端末のブラウザの中だけに保存され、公開サイトには含まれません。太枠のスタックは登録済みです。</p></section>`;
   if(hasImg&&!IMGURL[k])imgUrl(k).then(u=>{const el=$('rimgEl');if(el&&u&&rkey()===k)el.src=u}).catch(()=>{});
@@ -786,6 +789,7 @@ document.addEventListener('click',async e=>{
     case 'rclear':{if(!await ask('このチャートを消去しますか？','消去'))break;delete RG[rkey()];saveRG();renderRange();break}
     case 'rimp-open':openSheet('rimp');break;
     case 'rimg-pick':ui.imgKey=rkey();$('rimgIn').click();break;
+    case 'rimg-multi':ui.imgBase={...ui.rg};$('rimgMulti').click();break;
     case 'rimg-del':{if(!await ask('このスクリーンショットを削除しますか？','削除'))break;const k=rkey();try{await idbDo('readwrite',st=>st.delete(k))}catch(err){}IMG.delete(k);if(IMGURL[k]){URL.revokeObjectURL(IMGURL[k]);delete IMGURL[k]}renderRange();break}
     case 'rzoom':{const u=IMGURL[rkey()];if(!u)break;$('vimg').src=u;$('vscroll').classList.remove('z');$('vzoomBtn').textContent='拡大';$('viewer').hidden=false;break}
     case 'vzoom':{const z=$('vscroll').classList.toggle('z');$('vzoomBtn').textContent=z?'全体表示':'拡大';break}
@@ -815,6 +819,11 @@ document.addEventListener('input',e=>{
   else if(t.id==='spA'||t.id==='spD'||t.id==='spI'){const v=num();ui.spot[t.id[2]]=v==null?null:(ui.unit==='bb'?v*s.bb:v);scheduleIcm()}
 });
 document.addEventListener('change',async e=>{const t=e.target;
+  if(t.id==='rimgMulti'){const fs=[...(t.files||[])],g=ui.imgBase;t.value='';if(!fs.length||!g)return;
+    const named=new Set(fs.map(f=>f.name)).size===fs.length;if(named)fs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+    let n=0;for(const f of fs.slice(0,RBB.length)){const k=rkey({...g,bb:RBB[n]});try{const b=await shrink(f);await idbDo('readwrite',st=>st.put(b,k));IMG.add(k);if(IMGURL[k])URL.revokeObjectURL(IMGURL[k]);IMGURL[k]=URL.createObjectURL(b);n++}catch(err){break}}
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+    toast(n?`${n}枚を ${RBB[0]}BB から順に登録しました`:'画像を保存できませんでした');if(ui.tab==='range')renderRange();return}
   if(t.id==='rimgIn'){const f=t.files&&t.files[0],k=ui.imgKey;t.value='';if(!f||!k)return;
     try{const b=await shrink(f);await idbDo('readwrite',st=>st.put(b,k));IMG.add(k);if(IMGURL[k])URL.revokeObjectURL(IMGURL[k]);IMGURL[k]=URL.createObjectURL(b);if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});toast('スクリーンショットを登録しました')}
     catch(err){toast('画像を保存できませんでした')}
