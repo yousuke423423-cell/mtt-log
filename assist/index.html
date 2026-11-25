@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
-window.MTT_BUILD="2026-11-25 11:29";
+window.MTT_BUILD="2026-11-25 11:34";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -218,6 +218,15 @@ nav button.on{background:var(--navy);color:#fff}
 .rdet{margin-top:8px;padding:8px 10px;border-radius:10px;background:#f2f2f4;font-size:13px;font-weight:700;min-height:36px}
 .rtitle{font-size:15px;font-weight:800;color:var(--navy);line-height:1.35}
 
+.rimg{display:block;width:100%;margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#111}
+.rimg img{display:block;width:100%;height:auto;min-height:80px}
+.viewer{position:fixed;inset:0;z-index:70;background:#000}
+.vscroll{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:flex-start;padding:calc(56px + env(safe-area-inset-top)) 0 calc(20px + env(safe-area-inset-bottom))}
+.vscroll img{display:block;width:100%;height:auto;flex:none}
+.vscroll.z img{width:230%}
+.vclose,.vzoom{position:absolute;top:calc(10px + env(safe-area-inset-top));min-height:38px;padding:0 14px;border-radius:10px;background:#ffffffe6;color:#111;font-weight:800;font-size:13px}
+.vclose{right:12px}.vzoom{left:12px}
+
 /* sheets */
 .scrim{position:fixed;inset:0;background:#0b0c0f80;z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{width:100%;max-width:560px;max-height:92%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--surface);border-radius:20px 20px 0 0;padding:8px 14px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px #0b0c0f55}
@@ -266,6 +275,8 @@ nav button.on{background:var(--navy);color:#fff}
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="row"><button class="btn" data-a="modal-no">キャンセル</button><button class="btn pri" id="modalOk" data-a="modal-ok">OK</button></div></div></div>
 <div class="toast" id="toast" hidden role="status"></div>
+<input type="file" id="rimgIn" accept="image/*" hidden>
+<div class="viewer" id="viewer" hidden><div class="vscroll" id="vscroll"><img id="vimg" alt=""></div><button class="vclose" data-a="vclose">閉じる</button><button class="vzoom" data-a="vzoom" id="vzoomBtn">拡大</button></div>
 
 <script>
 'use strict';
@@ -291,6 +302,16 @@ const RPOS=['UTG','LJ','HJ','CO','BTN','SB'],RORD=[...RPOS,'BB'],RBB=[10,15,20,3
 const RCOL={r:'#e4573d',a:'#8e1b2e',c:'#2f9e6b',f:'#e9e9ec'};
 const RLAB={open:{r:'オープン',a:'オールイン',c:'リンプ',f:'フォールド'},bb:{r:'3bet',a:'オールイン',c:'コール',f:'フォールド'},v3:{r:'4bet',a:'オールイン',c:'コール',f:'フォールド'}};
 let RG=LS.get('assist.ranges',{});if(!RG||typeof RG!=='object')RG={};
+// screenshots of charts live in IndexedDB on this device only
+const IMG=new Set(),IMGURL={};let idbP=null;
+function idb(){return idbP||(idbP=new Promise((res,rej)=>{let r;try{r=indexedDB.open('assist-img',1)}catch(e){return rej(e)}r.onupgradeneeded=()=>r.result.createObjectStore('img');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))}
+function idbDo(mode,fn){return idb().then(db=>new Promise((res,rej)=>{const tx=db.transaction('img',mode),q=fn(tx.objectStore('img'));tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)}))}
+function imgUrl(k){if(IMGURL[k])return Promise.resolve(IMGURL[k]);return idbDo('readonly',st=>st.get(k)).then(b=>b?(IMGURL[k]=URL.createObjectURL(b)):'')}
+async function shrink(file){ // keep it readable but small enough to store hundreds
+  try{const bmp=await createImageBitmap(file),m=Math.min(1,1500/bmp.width,3600/bmp.height),c=document.createElement('canvas');c.width=Math.round(bmp.width*m);c.height=Math.round(bmp.height*m);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.86));return b||file}catch(e){return file}
+}
+idbDo('readonly',st=>st.getAllKeys()).then(ks=>{(ks||[]).forEach(k=>IMG.add(k));if(ui.tab==='range')renderRange()}).catch(()=>{});
 function saveRG(){if(!LS.set('assist.ranges',RG))toast('レンジを保存できませんでした')}
 function save(){if(!LS.set('assist.v1',S))toast('保存できませんでした（ブラウザの空き容量を確認）')}
 const ses=()=>S.ses;
@@ -629,10 +650,10 @@ function rfix(){const g=ui.rg;if(!RPOS.includes(g.pos))g.pos='UTG';if(!RBB.inclu
 function rtitle(g=ui.rg){return g.kind==='open'?`${g.pos} のオープン`:g.kind==='bb'?`BB のディフェンス（${g.pos} のオープンに対して）`:`${g.pos} オープン → ${g.vs} の3betへの対応`}
 function cellBg(r,a,c){let x=0;const seg=[];for(const [v,col] of [[r,RCOL.r],[a,RCOL.a],[c,RCOL.c],[100-r-a-c,RCOL.f]])if(v>0){seg.push(`${col} ${x}% ${x+v}%`);x+=v}return `linear-gradient(90deg,${seg.join(',')})`}
 function rsummary(ch){const t={r:0,a:0,c:0};if(ch)for(let i=0;i<169;i++){const w=combos(i);t.r+=ch.d[i*3]*w;t.a+=ch.d[i*3+1]*w;t.c+=ch.d[i*3+2]*w}for(const k in t)t[k]=t[k]/1326;t.f=100-t.r-t.a-t.c;return t}
-function rcount(){return Object.keys(RG).length}
+function rcount(){return new Set([...Object.keys(RG),...IMG]).size}
 function renderRange(){
   rfix();const g=ui.rg,k=rkey(),ch=RG[k],L=RLAB[g.kind],sum=rsummary(ch),after=RORD.slice(RORD.indexOf(g.pos)+1);
-  const has=(kind,pos,vs,bb)=>!!RG[rkey({kind,pos,vs,bb})];
+  const hasImg=IMG.has(k),showGrid=!!ch||ui.redit,has=key=>!!RG[key]||IMG.has(key),kOf=o=>rkey({...g,...o});
   let grid='';
   for(let i=0;i<169;i++){const r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0;grid+=`<button data-a="rcell" data-h="${i}" class="${r+a+c>=50?'on':''} ${ui.rhand===i?'cur':''}" style="background:${cellBg(r,a,c)}">${handName(i)}</button>`}
   let det='ハンドをタップすると、頻度を表示します。';
@@ -643,21 +664,26 @@ function renderRange(){
     <div class="rsel k6">${RPOS.map(p=>`<button class="chip ${g.pos===p?'on':''}" data-a="rpos" data-v="${p}">${p}</button>`).join('')}</div>
     ${g.kind==='v3'?`<div class="rlab">3betしてきた相手のポジション</div><div class="rsel k6">${RORD.slice(1).map(p=>`<button class="chip ${g.vs===p?'on':''}" data-a="rvs" data-v="${p}" ${after.includes(p)?'':'disabled'}>${p}</button>`).join('')}</div>`:''}
     <div class="rlab">スタック（BB）</div>
-    <div class="rsel k8">${RBB.map(b=>`<button class="chip num ${g.bb===b?'on':''}" data-a="rbb" data-v="${b}">${b}</button>`).join('')}</div>
+    <div class="rsel k8">${RBB.map(b=>`<button class="chip num ${g.bb===b?'on':''}" data-a="rbb" data-v="${b}" style="${g.bb!==b&&has(kOf({bb:b}))?'border-color:var(--ink);border-width:2px':''}">${b}</button>`).join('')}</div>
   </section>
   <section class="card">
-    <div class="bar"><div class="rtitle" style="flex:1">${rtitle()} ・ ${g.bb}BB</div><button class="mini ${ui.redit?'navy':'blue'}" data-a="redit">${ui.redit?'編集を終える':'編集'}</button></div>
-    ${ch?'':'<div class="hint" style="margin-top:6px">このチャートはまだ登録されていません。</div>'}
-    <div class="rgrid">${grid}</div>
+    <div class="bar"><div class="rtitle" style="flex:1">${rtitle()} ・ ${g.bb}BB</div>${showGrid||hasImg?`<button class="mini ${ui.redit?'navy':'blue'}" data-a="redit">${ui.redit?'編集を終える':ch?'編集':'手入力'}</button>`:''}</div>
+    ${hasImg?`<button class="rimg" data-a="rzoom" aria-label="スクリーンショットを拡大"><img id="rimgEl" alt="${esc(rtitle())} ${g.bb}BB のスクリーンショット" src="${IMGURL[k]||''}"></button>
+      <div class="row" style="margin-top:8px"><button class="btn" data-a="rimg-pick">画像を差し替え</button><button class="btn dangerous" data-a="rimg-del" style="flex:0 0 auto">画像を削除</button></div>`:''}
+    ${!hasImg&&!showGrid?`<div class="hint" style="margin-top:6px">このチャートはまだ登録されていません。GTO Wizardで撮ったスクリーンショットを登録すると、ここに表示されます。</div>
+      <button class="btn pri" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button><button class="btn ghost" data-a="redit" style="width:100%;margin-top:8px">手入力でグリッドを作る</button>`:''}
+    ${showGrid?`<div class="rgrid">${grid}</div>
     <div class="rleg num">${['r','a','c','f'].map(x=>`<span><i style="background:${RCOL[x]}"></i>${L[x]} ${ch?sum[x].toFixed(1)+'%':'—'}</span>`).join('')}</div>
     ${ui.redit?`<div class="rlab">塗るアクション</div><div class="rsel" style="grid-template-columns:repeat(4,1fr)">${['r','a','c','f'].map(x=>`<button class="chip ${ui.brush.a===x?'on':''}" data-a="rbrush" data-v="${x}">${L[x]}</button>`).join('')}</div>
       <div class="rlab">頻度</div><div class="rsel" style="grid-template-columns:repeat(4,1fr)">${[100,75,50,25].map(p=>`<button class="chip num ${ui.brush.p===p?'on':''}" data-a="rpct" data-v="${p}" ${ui.brush.a==='f'?'disabled':''}>${p}%</button>`).join('')}</div>
       <div class="row" style="margin-top:10px"><button class="btn" data-a="rimp-open">貼り付けて取り込む</button>${ch?'<button class="btn dangerous" data-a="rclear" style="flex:0 0 auto">消去</button>':''}</div>
       <p class="fine">ハンドをタップすると、選んだアクションと頻度で塗ります。</p>`:`<div class="rdet num">${det}</div>`}
+    ${hasImg?'':'<button class="btn" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button>'}`:''}
   </section>
   <section class="card"><h2>レンジデータ<span>登録済み ${rcount()} / ${RPOS.length*RBB.length*2+RBB.length*21} 枚</span></h2>
     <div class="row"><button class="btn" data-a="rfile">ファイルから取り込む</button><button class="btn" data-a="rcopy">全データをコピー</button></div><input type="file" id="rfileIn" accept=".json,.txt,application/json,text/plain" hidden>
-    <p class="fine">レンジはこのブラウザの中だけに保存され、公開サイトには含まれません。</p></section>`;
+    <p class="fine">スクリーンショットとレンジは、この端末のブラウザの中だけに保存され、公開サイトには含まれません。太枠のスタックは登録済みです。</p></section>`;
+  if(hasImg&&!IMGURL[k])imgUrl(k).then(u=>{const el=$('rimgEl');if(el&&u&&rkey()===k)el.src=u}).catch(()=>{});
 }
 function paint(idx){
   const k=rkey(),ch=RG[k]||(RG[k]={d:new Array(507).fill(0)}),b=ui.brush,o=idx*3,cur={r:ch.d[o],a:ch.d[o+1],c:ch.d[o+2]};
@@ -759,6 +785,11 @@ document.addEventListener('click',async e=>{
     case 'rcell':{const i=+d.h,y=$('main').scrollTop;if(ui.redit)paint(i);ui.rhand=i;renderRange();$('main').scrollTop=y;break}
     case 'rclear':{if(!await ask('このチャートを消去しますか？','消去'))break;delete RG[rkey()];saveRG();renderRange();break}
     case 'rimp-open':openSheet('rimp');break;
+    case 'rimg-pick':ui.imgKey=rkey();$('rimgIn').click();break;
+    case 'rimg-del':{if(!await ask('このスクリーンショットを削除しますか？','削除'))break;const k=rkey();try{await idbDo('readwrite',st=>st.delete(k))}catch(err){}IMG.delete(k);if(IMGURL[k]){URL.revokeObjectURL(IMGURL[k]);delete IMGURL[k]}renderRange();break}
+    case 'rzoom':{const u=IMGURL[rkey()];if(!u)break;$('vimg').src=u;$('vscroll').classList.remove('z');$('vzoomBtn').textContent='拡大';$('viewer').hidden=false;break}
+    case 'vzoom':{const z=$('vscroll').classList.toggle('z');$('vzoomBtn').textContent=z?'全体表示':'拡大';break}
+    case 'vclose':$('viewer').hidden=true;break;
     case 'rimp-act':ui.rimp=d.v;document.querySelectorAll('[data-a="rimp-act"]').forEach(b=>b.classList.toggle('on',b.dataset.v===ui.rimp));break;
     case 'rimp-go':{const map=parseRange($('rimpTa').value),n=Object.keys(map).length;if(!n){toast('読み取れるハンドがありません（例：AA,KK,AKs:0.5）');break}applyRange(map,ui.rimp);closeSheet();toast(n+'ハンドを取り込みました');break}
     case 'rfile':$('rfileIn').click();break;
@@ -783,10 +814,15 @@ document.addEventListener('input',e=>{
   else if(t.id==='pLeft'||t.id==='pItm'||t.id==='pEnt'){const v=parseInt(t.value,10);s.pay[{pLeft:'left',pItm:'itm',pEnt:'entries'}[t.id]]=v>0?v:null;save();updPaySum()}
   else if(t.id==='spA'||t.id==='spD'||t.id==='spI'){const v=num();ui.spot[t.id[2]]=v==null?null:(ui.unit==='bb'?v*s.bb:v);scheduleIcm()}
 });
-document.addEventListener('change',async e=>{const t=e.target;if(t.id==='rfileIn'){const f=t.files&&t.files[0];if(!f)return;let j=null;try{j=JSON.parse(await f.text())}catch(err){}const n=mergeRanges(j);t.value='';if(n<=0)toast('レンジのデータとして読み取れませんでした');else{toast(n+'枚のチャートを取り込みました');renderRange()}}else if(t.id==='spV'){ui.spot.v=+t.value;spotDefaults();renderIcm()}else if(t.id==='hPos')ui.hd.pos=t.value});
+document.addEventListener('change',async e=>{const t=e.target;
+  if(t.id==='rimgIn'){const f=t.files&&t.files[0],k=ui.imgKey;t.value='';if(!f||!k)return;
+    try{const b=await shrink(f);await idbDo('readwrite',st=>st.put(b,k));IMG.add(k);if(IMGURL[k])URL.revokeObjectURL(IMGURL[k]);IMGURL[k]=URL.createObjectURL(b);if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});toast('スクリーンショットを登録しました')}
+    catch(err){toast('画像を保存できませんでした')}
+    if(ui.tab==='range')renderRange();return}
+  if(t.id==='rfileIn'){const f=t.files&&t.files[0];if(!f)return;let j=null;try{j=JSON.parse(await f.text())}catch(err){}const n=mergeRanges(j);t.value='';if(n<=0)toast('レンジのデータとして読み取れませんでした');else{toast(n+'枚のチャートを取り込みました');renderRange()}}else if(t.id==='spV'){ui.spot.v=+t.value;spotDefaults();renderIcm()}else if(t.id==='hPos')ui.hd.pos=t.value});
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){const m={qn:'qadd',nText:'nadd',hLine:'hadd',newTag:'tagadd',rdText:'rdadd'}[e.target.id];if(m){e.preventDefault();document.querySelector(`[data-a="${m}"]`).click()}}
-  if(e.key==='Escape'){if(!$('modal').hidden)endModal(false);else if(ui.sheet)closeSheet()}
+  if(e.key==='Escape'){if(!$('viewer').hidden)$('viewer').hidden=true;else if(!$('modal').hidden)endModal(false);else if(ui.sheet)closeSheet()}
 });
 render();
 </script>
