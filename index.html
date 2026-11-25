@@ -41,6 +41,15 @@ select{font:inherit;font-size:15px;font-weight:800;color:var(--ink);padding:8px 
 .who2{font-weight:800;font-size:14px;color:var(--blue);display:flex;flex-direction:column;line-height:1.2;padding-left:2px}
 .who2 small{font-size:11px;color:var(--muted);font-weight:700}
 .rem{font-size:11.5px;color:var(--muted);font-weight:600;margin:3px 0 0 92px;min-height:17px}
+.paybtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#f6f9fe;border:1px solid var(--line);border-radius:10px;padding:10px 11px;min-height:48px}
+.paybtn span{flex:1;min-width:0;font-size:13px;font-weight:600;line-height:1.45}
+.paybtn b{flex:none;color:var(--blue);font-size:12px}
+.paysum{white-space:pre-line;background:var(--soft);border-radius:11px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--navy);line-height:1.6;margin-top:8px}
+.paysum:empty{display:none}
+.payrow{display:grid;grid-template-columns:56px 12px 56px 14px 1fr 34px;gap:5px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted);font-weight:700}
+.payrow>input{padding:10px 6px;text-align:center;font-weight:700}
+.payrow .inl input{padding-right:62px}
+.payrow .del{width:34px}
 .stkfoot{margin-top:6px;padding-top:8px;border-top:1px solid #eef2f8;font-size:12px;font-weight:700;color:var(--navy);display:flex;gap:14px;flex-wrap:wrap}
 [hidden]{display:none!important}
 
@@ -260,15 +269,15 @@ function fresh(){
   const c=LS.get('mtt.ctx',{});
   const n=POS[c.n]?c.n:9;
   return {id:uid(),created:Date.now(),updated:0,name:c.name||'',n,sb:c.sb??500,bb:c.bb||1000,ante:c.ante??1000,anteType:c.anteType||'bba',
-    level:c.level||'',prize:c.prize||'',avg:c.avg??null,vil:'',hero:POS[n].includes('BTN')?'BTN':'SB',stacks:{},hole:['',''],board:['','','','',''],shown:{},actions:[],street:0,profiles:{},notes:['','','',''],memo:'',tags:'',result:''};
+    level:c.level||'',prize:c.prize||'',avg:c.avg??null,vil:'',pay:c.pay&&Array.isArray(c.pay.rows)?clone(c.pay):{rows:[],left:null,itm:null,entries:null},hero:POS[n].includes('BTN')?'BTN':'SB',stacks:{},hole:['',''],board:['','','','',''],shown:{},actions:[],street:0,profiles:{},notes:['','','',''],memo:'',tags:'',result:''};
 }
-function normalize(x){const f=fresh();const o={...f,...x};o.level=(x&&x.level)||'';o.prize=(x&&x.prize)||'';o.avg=x&&x.avg!=null?x.avg:null;o.vil=(x&&x.vil)||'';if(!POS[o.n])o.n=9;if(!POS[o.n].includes(o.hero))o.hero=POS[o.n][0];for(const k of ['stacks','shown','profiles'])if(!o[k]||typeof o[k]!=='object')o[k]={};for(const [k,len] of [['hole',2],['board',5],['notes',4]]){if(!Array.isArray(o[k]))o[k]=[];o[k]=Array.from({length:len},(_,i)=>o[k][i]||'')}if(!Array.isArray(o.actions))o.actions=[];return o}
+function normalize(x){const f=fresh();const o={...f,...x};o.level=(x&&x.level)||'';o.prize=(x&&x.prize)||'';o.avg=x&&x.avg!=null?x.avg:null;o.pay=x&&x.pay&&Array.isArray(x.pay.rows)?x.pay:{rows:[],left:null,itm:null,entries:null};o.vil=(x&&x.vil)||'';if(!POS[o.n])o.n=9;if(!POS[o.n].includes(o.hero))o.hero=POS[o.n][0];for(const k of ['stacks','shown','profiles'])if(!o[k]||typeof o[k]!=='object')o[k]={};for(const [k,len] of [['hole',2],['board',5],['notes',4]]){if(!Array.isArray(o[k]))o[k]=[];o[k]=Array.from({length:len},(_,i)=>o[k][i]||'')}if(!Array.isArray(o.actions))o.actions=[];return o}
 let hands=LS.get('mtt.hands',[]);if(!Array.isArray(hands))hands=[];hands=hands.map(normalize);
 let h=normalize(LS.get('mtt.draft',null)||fresh());
 let dirty=LS.get('mtt.dirty',false);
 const ui={view:'rec',custom:false,customAll:false,unit:LS.get('mtt.unit','bb'),sheet:null,pk:null,seat:null,cloud:'off'};
 
-function touch(){dirty=true;LS.set('mtt.draft',h);LS.set('mtt.dirty',true);LS.set('mtt.ctx',{n:h.n,sb:h.sb,bb:h.bb,ante:h.ante,anteType:h.anteType,name:h.name,level:h.level,prize:h.prize,avg:h.avg})}
+function touch(){dirty=true;LS.set('mtt.draft',h);LS.set('mtt.dirty',true);LS.set('mtt.ctx',{n:h.n,sb:h.sb,bb:h.bb,ante:h.ante,anteType:h.anteType,name:h.name,level:h.level,prize:h.prize,avg:h.avg,pay:h.pay})}
 
 /* ---------- format ---------- */
 const fc=x=>Math.round(x).toLocaleString('en-US');
@@ -472,13 +481,68 @@ function renderSum(){
   grow($('memo'));
 }
 
+/* ---------- prize structure ---------- */
+const trimNum=v=>String(Math.round(v*100)/100);
+const fm=x=>x>=1e8?trimNum(x/1e8)+'億':x>=1e4?trimNum(x/1e4)+'万':fc(x);
+function payRows(){return h.pay.rows.filter(r=>r.from>=1&&r.amt!=null).map(r=>({from:r.from,to:Math.max(r.to||r.from,r.from),amt:r.amt})).sort((a,b)=>a.from-b.from)}
+function payInfo(){
+  const p=h.pay,rows=payRows(),o={rows};o.itm=p.itm||(rows.length?rows[rows.length-1].to:null);
+  if(rows.length){if(rows[0].from===1)o.first=rows[0].amt;o.min=rows[rows.length-1].amt}
+  if(p.left&&o.itm){
+    if(p.left>o.itm)o.bubble=p.left-o.itm;
+    else{const cur=rows.find(r=>p.left>=r.from&&p.left<=r.to);if(cur){o.cur=cur.amt;const up=rows.filter(r=>r.to<cur.from);if(up.length){const n=up[up.length-1];o.next={amt:n.amt,at:n.to,need:p.left-n.to}}}}
+  }
+  return o;
+}
+function payLines(){
+  const p=h.pay,o=payInfo(),L=[],a=[];
+  if(p.left)L.push(`残り ${fc(p.left)}${p.entries?'/'+fc(p.entries):''}人${o.itm?`（ITM ${fc(o.itm)}人）`:''}`);
+  else if(p.entries||p.itm)L.push([p.entries?`エントリー ${fc(p.entries)}人`:'',o.itm?`ITM ${fc(o.itm)}人`:''].filter(Boolean).join(' / '));
+  if(o.bubble)a.push(`バブルまであと${o.bubble}人`);
+  if(o.cur!=null)a.push(`現在 ${fm(o.cur)}`+(o.next?` → 次 ${fm(o.next.amt)}（${o.next.at}位・あと${o.next.need}人）`:''));
+  if(o.bubble&&o.min!=null)a.push(`最低 ${fm(o.min)}`);
+  if(o.first!=null)a.push(`1位 ${fm(o.first)}`);
+  if(a.length)L.push('賞金 '+a.join(' / '));
+  return L;
+}
+function parsePay(text){
+  const rows=[];
+  for(let line of String(text).split(/\n/)){
+    line=line.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[,，]/g,'').replace(/[¥￥$]/g,' ').replace(/(位|st|nd|rd|th)/gi,'$1 ');
+    const m=line.match(/(\d{1,5})\s*(?:位|st|nd|rd|th)?\s*(?:[-‐–—~〜～]\s*(\d{1,5})\s*(?:位|st|nd|rd|th)?)?[\s:：.]+(\d+(?:\.\d+)?)\s*(億|万|k|m)?/i);
+    if(!m)continue;let amt=parseFloat(m[3]);const u=(m[4]||'').toLowerCase();
+    amt*=u==='万'?1e4:u==='億'?1e8:u==='k'?1e3:u==='m'?1e6:1;
+    const from=+m[1],to=m[2]?+m[2]:from;if(from<1||to<from||!(amt>=0))continue;
+    rows.push({from,to:to===from?null:to,amt:Math.round(amt)});
+  }
+  return rows.sort((a,b)=>a.from-b.from);
+}
+function payHTML(){
+  const p=h.pay;
+  const row=(r,i)=>`<div class="payrow"><input class="num" type="number" inputmode="numeric" min="1" data-pr="${i}" data-k="from" value="${r.from??''}" aria-label="順位（から）"><span>〜</span><input class="num" type="number" inputmode="numeric" min="1" data-pr="${i}" data-k="to" value="${r.to??''}" placeholder="${r.from??''}" aria-label="順位（まで）"><span>位</span><label class="inl"><input class="num" type="number" inputmode="numeric" min="0" data-pr="${i}" data-k="amt" value="${r.amt??''}" placeholder="賞金額" aria-label="賞金額"><span id="payh${i}">${r.amt?fm(r.amt):''}</span></label><button class="del" data-a="pay-del" data-i="${i}" aria-label="この行を削除">✕</button></div>`;
+  return `<div class="grab"></div><div class="shead"><h3>賞金・進行状況</h3><button class="x" data-a="setup">設定に戻る</button></div>
+  <div class="lab">進行状況（人数）</div>
+  <div class="g3"><label class="inl"><input id="pLeft" class="num" type="number" inputmode="numeric" min="1" value="${p.left??''}" aria-label="残り人数"><span>残り</span></label><label class="inl"><input id="pItm" class="num" type="number" inputmode="numeric" min="1" value="${p.itm??''}" aria-label="インマネ人数"><span>ITM</span></label><label class="inl"><input id="pEnt" class="num" type="number" inputmode="numeric" min="1" value="${p.entries??''}" aria-label="エントリー数"><span>参加</span></label></div>
+  <div class="paysum num" id="paySum"></div>
+  <div class="lab">賞金表</div>
+  ${p.rows.map(row).join('')||'<div class="empty-log">行を追加するか、下の欄に貼り付けて取り込みます。</div>'}
+  <div class="row" style="margin-top:10px"><button class="btn" data-a="pay-add">＋ 行を追加</button>${p.rows.length?'<button class="btn dangerous" data-a="pay-clear" style="flex:0 0 auto">全消去</button>':''}</div>
+  <div class="lab">貼り付けて取り込む</div>
+  <textarea id="payPaste" rows="3" placeholder="1位 3,000,000&#10;2位 1,800,000&#10;10-12位 15万" aria-label="賞金表のテキスト"></textarea>
+  <p class="dockmsg" style="text-align:left;margin:6px 0 8px">賞金表を撮影し、写真アプリで文字を長押ししてコピーすると、そのまま貼り付けられます。1行に「順位 金額」の形で読み取ります。</p>
+  <button class="btn navy" data-a="pay-imp" style="width:100%">取り込む</button>
+  <div class="lab">備考（任意）</div><textarea id="fPrize" rows="1" placeholder="例：1位はWSOPパッケージ付き" aria-label="賞金の備考">${esc(h.prize)}</textarea>`;
+}
+function updPaySum(){const el=$('paySum');if(el)el.textContent=payLines().join('\n');const i=$('pItm'),r=payRows();if(i)i.placeholder=r.length?r[r.length-1].to:''}
+
 /* ---------- share text ---------- */
 function shareText(){
   const L=[],C=a=>a.map(ctext).join(' ');
   L.push('【'+(h.name||'MTTハンドレビュー')+'】');
   L.push(`${h.level?h.level+' / ':''}${h.n}人 / ${fc(h.sb)}-${fc(h.bb)}${h.anteType==='none'?'':' ('+anteText()+')'}`);
   if(h.avg!=null)L.push('Avg '+fb(h.avg));
-  if(h.prize)L.push('賞金: '+h.prize.replace(/\n+/g,' / '));
+  L.push(...payLines());
+  if(h.prize)L.push('備考: '+h.prize.replace(/\n+/g,' / '));
   L.push(`Hero ${pname(h.hero)} ${h.hole.some(Boolean)?C(h.hole):'??'}${h.stacks[h.hero]!=null?'（'+fb(h.stacks[h.hero])+'）':''}`);
   const inv=[...new Set(h.actions.filter(a=>a.t!=='F'&&a.p!==h.hero).map(a=>a.p))].filter(p=>h.stacks[p]!=null);
   if(inv.length)L.push('相手 '+inv.map(p=>`${pname(p)} ${fb(h.stacks[p])}`).join(' / '));
@@ -519,6 +583,7 @@ function renderSheet(){
   const el=$('sheet');
   if(ui.sheet==='setup')el.innerHTML=setupHTML();
   else if(ui.sheet==='seat')el.innerHTML=seatHTML();
+  else if(ui.sheet==='pay'){el.innerHTML=payHTML();updPaySum()}
   else if(ui.sheet==='pick')el.innerHTML=pickHTML();
   else if(ui.sheet==='share'){const t=shareText();el.innerHTML=shead('LINE共有テキスト')+`<textarea class="share" id="shareTa" readonly aria-label="共有テキスト">${esc(t)}</textarea><div class="row" style="margin-top:10px"><button class="btn pri" data-a="copy">コピー</button><a class="btn line" target="_blank" rel="noopener" href="https://line.me/R/share?text=${encodeURIComponent(t)}">LINEで送る</a></div><p class="dockmsg" style="margin:10px 0 0">コピーしてLINEに貼り付けるか、「LINEで送る」で送信先を選びます。</p>`}
 }
@@ -537,7 +602,7 @@ function setupHTML(){
   <div class="lab">アベレージスタック</div>
   <div class="g2"><label class="inl"><input id="fAvg" class="num" type="number" inputmode="numeric" min="0" value="${h.avg??''}" placeholder="例 70000" aria-label="アベレージスタック（点数）"><span>点</span></label><label class="inl"><input id="fAvgBb" class="num" type="number" inputmode="decimal" min="0" step="any" value="${h.avg!=null&&h.bb?nb(h.avg):''}" placeholder="例 35" aria-label="アベレージスタック（BB）"><span>BB</span></label></div>
   <div class="lab">大会名・ブラインドレベル</div><div class="g2" style="grid-template-columns:1.7fr 1fr"><input id="fName" value="${esc(h.name)}" placeholder="例：JOPT Main Day2" autocomplete="off" aria-label="大会名"><input id="fLevel" value="${esc(h.level)}" placeholder="例：Lv.16" autocomplete="off" aria-label="ブラインドレベル"></div>
-  <div class="lab">賞金</div><textarea id="fPrize" rows="2" placeholder="例：1位 300万 / 現在 5万 → 次 8万（残り42人・ITM 60人）" aria-label="賞金">${esc(h.prize)}</textarea>
+  <div class="lab">賞金・進行状況</div><button class="paybtn" data-a="pay"><span>${esc(payLines().join(' ／ ')||'賞金表・残り人数・インマネ人数を入力')}</span><b>編集 ›</b></button>
   <button class="btn pri" data-a="close" style="width:100%;margin-top:16px">テーブルに戻る</button>`;
 }
 function seatHTML(){
@@ -636,6 +701,11 @@ document.addEventListener('click',async e=>{
     case 'view-hist':ui.view=ui.view==='hist'?'rec':'hist';render();$('main').scrollTop=0;break;
     case 'new':{if(dirty&&h.actions.length&&!await ask('保存していない入力があります。新しいハンドを始めますか？','新規ハンド'))break;h=fresh();dirty=false;LS.set('mtt.draft',h);LS.set('mtt.dirty',false);ui.view='rec';ui.custom=false;render();renderSum();$('main').scrollTop=0;break}
     case 'setup':openSheet('setup');break;
+    case 'pay':h.pay.rows.sort((x,y)=>(x.from||1e9)-(y.from||1e9));openSheet('pay');break;
+    case 'pay-add':{const r=h.pay.rows,l=r[r.length-1];r.push({from:l&&l.from?(l.to||l.from)+1:1,to:null,amt:null});touch();renderSheet();const i=document.querySelector(`[data-pr="${r.length-1}"][data-k="amt"]`);if(i)i.focus();break}
+    case 'pay-del':h.pay.rows.splice(+d.i,1);touch();renderSheet();break;
+    case 'pay-clear':{if(!await ask('賞金表をすべて消しますか？','消去'))break;h.pay.rows=[];touch();renderSheet();break}
+    case 'pay-imp':{const rows=parsePay($('payPaste').value);if(!rows.length){toast('読み取れる行がありません（例：1位 3,000,000）');break}if(h.pay.rows.length&&!await ask(`今の賞金表を、読み取った${rows.length}行で置き換えますか？`,'置き換える'))break;h.pay.rows=rows;touch();renderSheet();toast(rows.length+'行を取り込みました');break}
     case 'close':closeSheet();break;
     case 'seat':ui.seat=d.p;openSheet('seat');break;
     case 'hole':openPicker('Heroのカード',[['hole',0],['hole',1]],h.hole.every(Boolean)?+d.i:undefined);break;
@@ -680,6 +750,8 @@ document.addEventListener('input',e=>{
   else if(t.id==='q')renderHist();
   else if(t.id==='fName'){h.name=t.value;touch()}
   else if(t.id==='fLevel'){h.level=t.value;touch()}
+  else if(t.dataset.pr!=null){const r=h.pay.rows[+t.dataset.pr],v=parseFloat(t.value);if(!r)return;r[t.dataset.k]=isFinite(v)&&v>=0?Math.round(v):null;touch();if(t.dataset.k==='amt')$('payh'+t.dataset.pr).textContent=r.amt?fm(r.amt):'';updPaySum()}
+  else if(t.id==='pLeft'||t.id==='pItm'||t.id==='pEnt'){const v=parseInt(t.value,10);h.pay[{pLeft:'left',pItm:'itm',pEnt:'entries'}[t.id]]=v>0?v:null;touch();updPaySum()}
   else if(t.id==='fAvg'||t.id==='fAvgBb'){const v=parseFloat(t.value),bbm=t.id==='fAvgBb';h.avg=isFinite(v)&&v>=0?Math.round(bbm?v*h.bb:v):null;touch();const o=$(bbm?'fAvg':'fAvgBb');if(o)o.value=h.avg==null?'':(bbm?h.avg:nb(h.avg))}
   else if(t.dataset.stk){const k=t.dataset.stk,p=k==='hero'?h.hero:vilPos(),v=parseFloat(t.value),bbm=t.dataset.u==='bb';if(k==='vil')h.vil=p;setStack(p,isFinite(v)?(bbm?v*h.bb:v):null);const o=document.querySelector(`[data-stk="${k}"][data-u="${bbm?'chips':'bb'}"]`);if(o)o.value=isFinite(v)?(bbm?Math.round(v*h.bb):nb(v)):'';const z=calc();renderStrip();renderTable(z);renderDock(z);renderLog();updRem(z)}
   else if(t.id==='fPrize'){h.prize=t.value;touch();grow(t)}
