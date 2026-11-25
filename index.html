@@ -14,6 +14,18 @@
 <meta name="apple-mobile-web-app-title" content="MTT LOG">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta property="og:title" content="MTT LOG"><meta property="og:image" content="thumb.png">
+<script>
+window.MTT_BUILD="2026-11-25 10:41";
+(function(){
+  function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+    if(!j.v||j.v===window.MTT_BUILD||document.getElementById('updbar'))return;
+    var b=document.createElement('button');b.id='updbar';b.textContent='新しい版があります。タップして更新';
+    b.style.cssText='position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;background:#11306b;color:#fff;font:700 13px -apple-system,sans-serif;border:0;border-radius:99px;padding:10px 18px;box-shadow:0 8px 24px #0e224455;white-space:nowrap';
+    b.onclick=function(){location.replace(location.pathname+'?v='+encodeURIComponent(j.v))};document.body.appendChild(b);
+  }).catch(function(){})}
+  window.addEventListener('load',check);document.addEventListener('visibilitychange',function(){if(!document.hidden)check()});
+})();
+</script>
 <style>
 :root{
   /* layout: one-screen app. header / scrolling table+log / action dock pinned to the thumb */
@@ -603,7 +615,7 @@ function setupHTML(){
   <div class="g2"><label class="inl"><input id="fAvg" class="num" type="number" inputmode="numeric" min="0" value="${h.avg??''}" placeholder="例 70000" aria-label="アベレージスタック（点数）"><span>点</span></label><label class="inl"><input id="fAvgBb" class="num" type="number" inputmode="decimal" min="0" step="any" value="${h.avg!=null&&h.bb?nb(h.avg):''}" placeholder="例 35" aria-label="アベレージスタック（BB）"><span>BB</span></label></div>
   <div class="lab">大会名・ブラインドレベル</div><div class="g2" style="grid-template-columns:1.7fr 1fr"><input id="fName" value="${esc(h.name)}" placeholder="例：JOPT Main Day2" autocomplete="off" aria-label="大会名"><input id="fLevel" value="${esc(h.level)}" placeholder="例：Lv.16" autocomplete="off" aria-label="ブラインドレベル"></div>
   <div class="lab">賞金・進行状況</div><button class="paybtn" data-a="pay"><span>${esc(payLines().join(' ／ ')||'賞金表・残り人数・インマネ人数を入力')}</span><b>編集 ›</b></button>
-  <button class="btn pri" data-a="close" style="width:100%;margin-top:16px">テーブルに戻る</button>`;
+  <button class="btn pri" data-a="close" style="width:100%;margin-top:16px">テーブルに戻る</button>${window.MTT_BUILD?`<p class="dockmsg" style="margin:10px 0 0">更新日時 ${esc(window.MTT_BUILD)}</p>`:''}`;
 }
 function seatHTML(){
   const p=ui.seat,isHero=p===h.hero,st=h.stacks[p],pr=h.profiles[p]||{tags:[],note:''},n=foldCount(p),sh=h.shown[p]||['',''];
