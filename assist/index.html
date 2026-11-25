@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
-window.MTT_BUILD="2026-11-25 11:24";
+window.MTT_BUILD="2026-11-25 11:26";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -161,12 +161,12 @@ nav button.on{background:var(--navy);color:#fff}
 .big b{font-size:26px;font-weight:800;color:var(--navy);letter-spacing:-.6px}
 .big span{font-size:12px;color:var(--muted);font-weight:700}
 .tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-.tbl th{font-size:10.5px;font-weight:800;color:var(--muted);text-align:right;padding:4px 4px;border-bottom:1px solid var(--line)}
+.tbl th{font-size:10.5px;font-weight:800;color:var(--muted);text-align:right;padding:4px 4px;line-height:1.35;vertical-align:bottom;border-bottom:1px solid var(--line)}
 .tbl th:first-child,.tbl td:first-child{text-align:left}
 .tbl td{padding:8px 4px;border-bottom:1px solid #eeeef0;text-align:right;font-weight:700}
 .tbl td:first-child{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tbl td small{display:block;font-size:10.5px;color:var(--muted);font-weight:700}
-.rp{display:inline-block;min-width:58px;border-radius:8px;padding:3px 7px;background:#efeff1;color:var(--ink);font-weight:800;text-align:center}
+.rp{display:inline-block;min-width:52px;border-radius:8px;padding:3px 7px;background:#efeff1;color:var(--ink);font-weight:800;text-align:center}
 .rp.mid{background:#fff1dc;color:var(--warn)}.rp.hi{background:#fdecef;color:var(--danger)}
 .need{list-style:none;margin:0;padding:0;font-size:13px;font-weight:600}
 .need li{padding:5px 0;display:flex;gap:8px}
@@ -571,12 +571,13 @@ function icmCompute(){
   }
   const st=new Float64Array(n);st[0]=H;opp.forEach((x,j)=>st[j+1]=x.stack);for(let j=opp.length+1;j<n;j++)st[j]=rest;
   const pay=payArray(n),scen=[{h:H,v:-1}];
-  opp.forEach((x,j)=>{const E=Math.min(H,x.stack);scen.push({h:H+E,v:j+1,vs:x.stack-E},{h:H-E,v:j+1,vs:x.stack+E})});
+  const D0=(s.sb||0)+(s.bb||0)+(s.ante||0);
+  opp.forEach((x,j)=>{const E=Math.min(H,x.stack);scen.push({h:H+E,v:j+1,vs:x.stack-E},{h:H-E,v:j+1,vs:x.stack+E},{h:H,v:j+1,vs:x.stack+D0},{h:H+E+D0,v:j+1,vs:x.stack-E},{h:H-E,v:j+1,vs:x.stack+E+D0})});
   let spot=null;const sp=ui.spot,vj=opp.findIndex(x=>x.seat===sp.v);
   if(vj>=0&&sp.A>0){const V=opp[vj].stack,A=Math.min(sp.A,V,H),D=Math.max(0,sp.D||0),I=Math.min(Math.max(0,sp.I||0),A);
     spot={A,D,I,i0:scen.length};scen.push({h:H-I,v:vj+1,vs:V+D+I},{h:H+A+D,v:vj+1,vs:V-A},{h:H-A,v:vj+1,vs:V+A+D})}
   const r=icmEval(st,pay,scen),ev=r.ev,total=known+(unknown>0?rest*unknown:0);
-  const out={exact:r.exact,note,ev0:ev[0],share:H/total,n,opps:opp.map((x,j)=>{const w=ev[1+2*j],l=ev[2+2*j],up=w-ev[0],dn=ev[0]-l,bf=up>1e-9?dn/up:null;return {seat:x.seat,stack:x.stack,bf,rp:bf==null?null:(bf/(1+bf)-.5)*100,win:w,lose:l}})};
+  const out={exact:r.exact,note,ev0:ev[0],share:H/total,n,opps:opp.map((x,j)=>{const b=1+5*j,w=ev[b],l=ev[b+1],up=w-ev[0],dn=ev[0]-l,bf=up>1e-9?dn/up:null,E=Math.min(H,x.stack),cf=ev[b+2],cw=ev[b+3],cl=ev[b+4];return {seat:x.seat,stack:x.stack,bf,rp:bf==null?null:(bf/(1+bf)-.5)*100,win:w,lose:l,chip:E/(2*E+D0)*100,icm:cw-cl>1e-9?(cf-cl)/(cw-cl)*100:null}})};
   if(spot){const f=ev[spot.i0],w=ev[spot.i0+1],l=ev[spot.i0+2],C=spot.A-spot.I;out.spot={chip:C/(2*spot.A+spot.D)*100,icm:w-l>1e-9?(f-l)/(w-l)*100:null,fold:f,win:w,lose:l,C,A:spot.A}}
   return out;
 }
@@ -609,9 +610,9 @@ function fillIcm(r){
   $('icmMode').textContent=r.exact?'厳密計算':'シミュレーション（概算）';
   const cls=x=>x>=15?'hi':x>=8?'mid':'';
   el.innerHTML=`<div class="big"><b class="num">${fm(r.ev0)}</b><span>あなたの賞金期待値 ・ チップ持ち分 ${trimNum(r.share*100)}%</span></div>
-  <table class="tbl num"><thead><tr><th>相手</th><th>スタック</th><th>バブルファクター</th><th>リスクプレミアム</th></tr></thead><tbody>${r.opps.map(o=>{const p=S.players[s.seats[o.seat].pid];
-    return `<tr><td>${esc(dname(p,o.seat))}<small>${pos[o.seat]||''}</small></td><td>${fb(o.stack)}</td><td>${o.bf==null?'—':o.bf.toFixed(2)}</td><td>${o.rp==null?'—':`<span class="rp ${cls(o.rp)}">+${o.rp.toFixed(1)}%</span>`}</td></tr>`}).join('')}</tbody></table>
-  <p class="fine">リスクプレミアムは、その相手と有効スタックでオールインになるとき、チップだけで考えた場合（50%）より余分に必要な勝率です。${esc(r.note)}${r.exact?'':'順位の出方を多数回試した概算です。'}</p>`;
+  <table class="tbl num"><thead><tr><th>相手</th><th>BF</th><th>RP</th><th>コールの必要勝率<br>チップ → ICM込み</th></tr></thead><tbody>${r.opps.map(o=>{const p=S.players[s.seats[o.seat].pid];
+    return `<tr><td>${esc(dname(p,o.seat))}<small>${[pos[o.seat],fb(o.stack)].filter(Boolean).join(' ・ ')}</small></td><td>${o.bf==null?'—':o.bf.toFixed(2)}</td><td>${o.rp==null?'—':`<span class="rp ${cls(o.rp)}">+${o.rp.toFixed(1)}%</span>`}</td><td>${o.chip.toFixed(1)}% → <b style="font-size:15px">${o.icm==null?'—':o.icm.toFixed(1)+'%'}</b></td></tr>`}).join('')}</tbody></table>
+  <p class="fine">BF＝バブルファクター、RP＝リスクプレミアム。RPは、その相手と有効スタックでオールインになるとき、チップだけで考えた場合（50%）より余分に必要な勝率です。右端は、その相手が有効スタックをオールインし、SB・BB・Anteがポットにある状況でコールする場合の必要勝率です。${esc(r.note)}${r.exact?'':'順位の出方を多数回試した概算です。'}</p>`;
   const sr=$('spotRes');if(!sr)return;
   if(!r.spot){sr.innerHTML='<p class="fine">相手のオールイン額を入れると、コールに必要な勝率を出します。</p>';return}
   const x=r.spot,d=x.icm==null?null:x.icm-x.chip;
