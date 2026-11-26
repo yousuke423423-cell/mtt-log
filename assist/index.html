@@ -13,13 +13,14 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 17:21";
+window.MTT_BUILD="2026-11-26 17:39";
+try{var rkm=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);if(rkm)localStorage.setItem("assist.rkPending",rkm[1])}catch(e){}
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
     var b=document.createElement('button');b.id='updbar';b.textContent='新しい版があります。タップして更新';
     b.style.cssText='position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;background:#15161a;color:#fff;font:700 13px -apple-system,sans-serif;border:1px solid #ffffff59;border-radius:99px;padding:10px 18px;box-shadow:0 8px 24px #0006;white-space:nowrap';
-    b.onclick=function(){location.replace(location.pathname+'?v='+encodeURIComponent(j.v))};document.body.appendChild(b);
+    b.onclick=function(){location.replace(location.pathname+'?v='+encodeURIComponent(j.v)+location.hash)};document.body.appendChild(b);
   }).catch(function(){})}
   window.addEventListener('load',check);document.addEventListener('visibilitychange',function(){if(!document.hidden)check()});
 })();
@@ -966,7 +967,7 @@ function renderRange(){
   for(let i=0;i<169;i++){const r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0;grid+=`<button data-a="rcell" data-h="${i}" class="${r+a+c>=50?'on':''} ${ui.rhand===i?'cur':''} ${out(i)&&!(r+a+c)?'out':''}" style="background:${cellBg(r,a,c)}">${handName(i)}</button>`}
   let det='ハンドをタップすると、頻度を表示します。';
   if(ui.rhand!=null){const i=ui.rhand,r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0,parts=[];if(r)parts.push(`${L.r} ${r}%`);if(a)parts.push(`${L.a} ${a}%`);if(c)parts.push(`${L.c} ${c}%`);if(100-r-a-c>0)parts.push(`${L.f} ${100-r-a-c}%`);det=`<b>${handName(i)}</b>　${out(i)&&!(r+a+c)?'オープンしないハンド':parts.join(' ／ ')}${ch&&ch.z&&ch.z[i]?`<br><span style="font-weight:600;color:var(--muted)">${L.r}のサイズ別：${esc(ch.z[i])}</span>`:''}`}
-  $('vRange').innerHTML=`<section class="card">
+  $('vRange').innerHTML=`${!LS.get('assist.rk',null)&&!rcount()?`<section class="card"><h2>レンジ表を読み込む<span>最初の1回だけ</span></h2><div class="qnote" style="margin-top:0"><input id="rkIn" placeholder="リンクか合言葉を貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="リンクか合言葉"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div><p class="fine">受け取ったリンクをコピーして、ここに貼り付けてください。</p></section>`:''}<section class="card">
     <div class="rsel" style="grid-template-columns:1fr 1fr">${[['open','オープン'],['bb','BBディフェンス'],['b3','3betする側'],['v3','3betされた側']].map(([v,l])=>`<button class="chip ${g.kind===v?'on':''}" data-a="rkind" data-v="${v}">${l}</button>`).join('')}</div>
     <div class="rlab">${g.kind==='bb'?'オープンした相手のポジション':g.kind==='v3'?'自分（オープンした側）のポジション':g.kind==='b3'?'自分（3betする側）のポジション':'ポジション'}</div>
     <div class="rsel k6">${rheroes(g).map(p=>`<button class="chip ${g.pos===p?'on':''}" data-a="rpos" data-v="${p}">${p}</button>`).join('')}</div>
@@ -989,7 +990,7 @@ function renderRange(){
     ${hasImg?'':'<button class="btn" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button>'}`:''}
   </section>
   <section class="card"><h2>レンジデータ<span>登録済み ${rcount()} 枚</span></h2>
-    ${LS.get('assist.rk',null)?`<div class="bar" style="margin-bottom:10px"><div class="t" style="white-space:normal">8maxのレンジ表を読み込み済みです。</div><button class="mini" data-a="rk-again">読み込み直す</button></div>`:`<div class="rlab" style="margin-top:0">合言葉でレンジ表を読み込む</div><div class="qnote" style="margin:6px 0 12px"><input id="rkIn" placeholder="合言葉かリンクを貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="合言葉"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div>`}
+    ${LS.get('assist.rk',null)?`<div class="bar" style="margin-bottom:10px"><div class="t" style="white-space:normal">8maxのレンジ表を読み込み済みです。</div><button class="mini" data-a="rk-again">読み込み直す</button></div>`:rcount()?`<div class="rlab" style="margin-top:0">合言葉でレンジ表を読み込む</div><div class="qnote" style="margin:6px 0 12px"><input id="rkIn" placeholder="合言葉かリンクを貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="合言葉"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div>`:''}
     <button class="btn navy" data-a="rimg-multi" style="width:100%">スクショをまとめて登録</button>
     <p class="fine" style="margin:6px 0 10px">${esc(rtitle())} のスクリーンショットを、${rbase()[0]}BB → ${rbase()[rbase().length-1]}BB の順に撮ってまとめて選ぶと、撮った順にスタックへ割り当てます。</p>
     <div class="row"><button class="btn" data-a="rfile">ファイルから取込</button><button class="btn" data-a="rcopy">全データをコピー</button></div><input type="file" id="rfileIn" accept=".json,.txt,application/json,text/plain" hidden>
@@ -1649,21 +1650,29 @@ render();if(HL.imported)toast(`MTT LOGのハンド ${HL.imported}件を引き継
 /* ---------- range pack: the charts sit beside the app only in encrypted form (ranges.enc); the key lives in the link the owner was given
    and, after first use, in this browser. Without the key the file is unreadable. ---------- */
 const RPV='2026-11-26b';
+// returns 0 = loaded, 1 = could not fetch, 2 = wrong key or unreadable
 async function loadPack(key,quiet){
+  let why=2;
   try{
     const b=atob(String(key).replace(/-/g,'+').replace(/_/g,'/')),raw=new Uint8Array(b.length);for(let i=0;i<b.length;i++)raw[i]=b.charCodeAt(i);if(raw.length!==32)throw 0;
-    const res=await fetch('ranges.enc?v='+RPV,{cache:'no-store'});if(!res.ok)throw 1;
-    const buf=new Uint8Array(await res.arrayBuffer()),k=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
+    why=1;const res=await fetch('ranges.enc?v='+RPV,{cache:'no-store'});if(!res.ok)throw 0;const buf=new Uint8Array(await res.arrayBuffer());why=2;
+    const k=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
     const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(0,12)},k,buf.slice(12));
-    const n=mergeRanges(JSON.parse(new TextDecoder().decode(plain)));if(!(n>0))throw 2;
-    LS.set('assist.rk',key);LS.set('assist.rpv',RPV);if(ui.tab==='range')renderRange();toast(`レンジ表 ${n}枚を読み込みました`);return true;
-  }catch(e){if(!quiet)toast(e===1?'レンジ表を取得できませんでした。通信を確認してください':'合言葉が違うか、読み込めませんでした');return false}
+    const n=mergeRanges(JSON.parse(new TextDecoder().decode(plain)));if(!(n>0))throw 0;
+    LS.set('assist.rk',key);LS.set('assist.rpv',RPV);if(ui.tab==='range')renderRange();toast(`レンジ表 ${n}枚を読み込みました`);return 0;
+  }catch(e){if(!quiet)toast(why===1?'レンジ表を取得できませんでした。通信を確認してください':'合言葉が違うか、読み込めませんでした');return why}
 }
-(function(){
-  const m=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);
-  if(m){try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}ui.tab='range';render();loadPack(m[1])}
-  else{const k=LS.get('assist.rk',null);if(k&&LS.get('assist.rpv','')!==RPV)loadPack(k,true)}
-})();
+// The key can arrive in the address (#rk=…) at load or later (same page, new fragment), or be left by the page head when an
+// update reloads the page before this code runs. It is removed from the address as soon as it is read.
+async function packStart(){
+  let k=null;const m=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);
+  if(m){k=m[1];try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+  let pend=null;try{pend=localStorage.getItem('assist.rkPending')}catch(e){}
+  if(!k&&pend&&/^[A-Za-z0-9_-]{43}$/.test(pend))k=pend;
+  if(k){ui.tab='range';render();const r=await loadPack(k);if(r!==1)try{localStorage.removeItem('assist.rkPending')}catch(e){}return}
+  const s=LS.get('assist.rk',null);if(s&&(LS.get('assist.rpv','')!==RPV||!Object.keys(RG).some(x=>/^(open|bb|b3|v3)\|/.test(x))))loadPack(s,true);
+}
+packStart();window.addEventListener('hashchange',packStart);
 
 </script>
 </body>
