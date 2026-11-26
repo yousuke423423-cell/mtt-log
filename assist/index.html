@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 15:56";
+window.MTT_BUILD="2026-11-26 16:10";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -298,6 +298,9 @@ nav button.on{background:var(--accent);color:var(--on-accent)}
 .hl .strip .t1{display:block;font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hl .strip .t2{display:block;font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hl .strip .edit{flex:none;font-weight:800;font-size:12px;border:1px solid var(--seatline);border-radius:8px;padding:6px 10px}
+.hl .tblbox{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);font-weight:600;line-height:1.55;display:flex;flex-direction:column;gap:8px}
+.hl .tblbox b{display:block;color:var(--ink);font-size:13px;font-weight:800}
+.hl .tblbox .mini{min-height:38px;flex:1}
 .hl .table{height:336px;height:clamp(286px,calc(100dvh - 350px),336px)}
 .hl .center{pointer-events:auto;top:44%;display:flex;flex-direction:column;align-items:center;gap:5px}
 .hl .streetlab{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--ftxt2)}
@@ -945,7 +948,7 @@ document.addEventListener('click',async e=>{
     case 'pay-imp':{const rows=parsePay($('payPaste').value);if(!rows.length){toast('読み取れる行がありません（例：1位 3,000,000）');break}if(s.pay.rows.length&&!await ask(`今の賞金表を、読み取った${rows.length}行で置き換えますか？`,'置き換える'))break;s.pay.rows=rows;save();renderSheet();toast(rows.length+'行を取り込みました');break}
     case 'pay-log':{const c=LS.get('mtt.ctx',null);if(!c||!c.pay)break;if(s.pay.rows.length&&!await ask('今の賞金表を、MTT LOGの賞金表で置き換えますか？','置き換える'))break;s.pay=JSON.parse(JSON.stringify(c.pay));if(!s.avg&&c.avg)s.avg=c.avg;save();renderSheet();toast('MTT LOGから取り込みました');break}
     case 'retable':{if(!await ask('すべての席を空にしますか？プレイヤーの記録は名簿に残ります。','空にする'))break;s.seats.forEach((x,i)=>{if(i>0){x.pid=null;x.stack=null}});s.btn=0;ui.sel=null;save();closeSheet();break}
-    case 'newses':{if(!await ask('新しい大会を始めますか？席・賞金表・人数をリセットします。プレイヤーの記録は名簿に残ります。','新しい大会'))break;const o=s;S.ses=newSes(o.n);S.ses.sb=o.sb;S.ses.bb=o.bb;S.ses.ante=o.ante;ui.sel=null;ui.spot={v:null,A:null,D:null,I:0,B:null,K:'pko'};save();renderSheet();toast('新しい大会を始めました');break}
+    case 'newses':{if(!await ask('新しい大会を始めますか？席・賞金表・人数をリセットします。プレイヤーの記録は名簿に残ります。','新しい大会'))break;const o=s;S.ses=newSes(o.n);S.ses.sb=o.sb;S.ses.bb=o.bb;S.ses.ante=o.ante;ui.sel=null;ui.spot={v:null,A:null,D:null,I:0,B:null,K:'pko'};save();HL.sesChanged();renderSheet();toast('新しい大会を始めました');break}
     case 'left-1':if(s.pay.left>2){s.pay.left--;save();render()}break;
     case 'sp-def':spotDefaults();renderIcm();break;
     case 'bk-copy':{const t=JSON.stringify({...S,hands:HL.all()});let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(err){}toast(ok?'コピーしました。メモ帳などに貼って保管してください':'コピーできませんでした');break}
@@ -982,10 +985,10 @@ document.addEventListener('input',e=>{
   else if(t.id==='pName'||t.id==='pLook'||t.id==='pGist'){const p=S.players[ui.pid];p[{pName:'name',pLook:'look',pGist:'gist'}[t.id]]=t.value;touchP(p)}
   else if(t.id==='rq'){ui.q=t.value;renderRoster()}
   else if(t.id==='aq'){ui.aq=t.value;const tmp=document.createElement('div');tmp.innerHTML=assignHTML();$('alist').innerHTML=tmp.querySelector('#alist').innerHTML}
-  else if(t.id==='sName'){s.name=t.value;save()}
-  else if(t.id==='sLevel'){s.level=t.value;save()}
-  else if(t.id==='sSb'||t.id==='sAnte'){s[t.id==='sSb'?'sb':'ante']=Math.round(num()||0);save()}
-  else if(t.id==='sBb'){const v=num();if(v>0){s.bb=Math.round(v);save()}}
+  else if(t.id==='sName'){s.name=t.value;save();HL.sesChanged()}
+  else if(t.id==='sLevel'){s.level=t.value;save();HL.sesChanged()}
+  else if(t.id==='sSb'||t.id==='sAnte'){s[t.id==='sSb'?'sb':'ante']=Math.round(num()||0);save();HL.sesChanged()}
+  else if(t.id==='sBb'){const v=num();if(v>0){s.bb=Math.round(v);save();HL.sesChanged()}}
   else if(t.id==='sAvg'||t.id==='sAvgBb'){const v=num(),bbm=t.id==='sAvgBb';s.avg=v==null?null:Math.round(bbm?v*s.bb:v);save();const o=$(bbm?'sAvg':'sAvgBb');if(o)o.value=s.avg==null?'':(bbm?s.avg:nb(s.avg))}
   else if(t.dataset.pr!=null){const r=s.pay.rows[+t.dataset.pr],v=num();if(!r)return;r[t.dataset.k]=v==null?null:Math.round(v);save();if(t.dataset.k==='amt')$('payh'+t.dataset.pr).textContent=r.amt?fm(r.amt):'';updPaySum()}
   else if(t.id==='pLeft'||t.id==='pItm'||t.id==='pEnt'){const v=parseInt(t.value,10);s.pay[{pLeft:'left',pItm:'itm',pEnt:'entries'}[t.id]]=v>0?v:null;save();updPaySum()}
@@ -1064,12 +1067,15 @@ const HL=(()=>{
   const E=id=>document.getElementById('hl-'+id),clone=x=>JSON.parse(JSON.stringify(x));
   let hands=LS.get('assist.hands',null),imported=0;
   if(!Array.isArray(hands)){const old=LS.get('mtt.hands',[]);hands=Array.isArray(old)?old:[];imported=hands.length} // carry over hands saved in MTT LOG on this site
-  function blank(){const s=ses(),n=POS[s.n]?s.n:9;return {id:'h'+uid(),created:Date.now(),updated:0,name:'',level:'',n,sb:s.sb,bb:s.bb,ante:s.ante||0,anteType:s.ante>0?'bba':'none',avg:null,payText:[],vil:'',hero:POS[n].includes('BTN')?'BTN':'SB',stacks:{},pids:{},names:{},hole:['',''],board:['','','','',''],shown:{},actions:[],street:0,profiles:{},notes:['','','',''],memo:'',tags:'',result:'',stub:false}}
+  // settings last used in a hand; blinds, name and level are dropped from it whenever the tournament settings are edited, so the most recent edit wins
+  function ctx(){let c=LS.get('assist.hctx',null);if(!c){const o=LS.get('mtt.ctx',null)||{};c={n:o.n};if(!S.ses.name&&!S.ses.level&&o.bb>0)Object.assign(c,{sb:o.sb,bb:o.bb,ante:o.ante,anteType:o.anteType,name:o.name,level:o.level})}return c}
+  function blank(){const s=ses(),c=ctx(),own=c.bb>0,n=POS[c.n]?c.n:POS[s.n]?s.n:9,ante=own?(c.ante||0):(s.ante||0);
+    return {id:'h'+uid(),created:Date.now(),updated:0,name:c.name??s.name??'',level:c.level??s.level??'',n,sb:own?(c.sb||0):s.sb,bb:own?c.bb:s.bb,ante,anteType:own&&c.anteType?c.anteType:ante>0?'bba':'none',avg:null,payText:[],vil:'',hero:POS[n].includes('BTN')?'BTN':'SB',stacks:{},pids:{},names:{},hole:['',''],board:['','','','',''],shown:{},actions:[],street:0,profiles:{},notes:['','','',''],memo:'',tags:'',result:'',stub:false}}
   function norm(x){
     const o={...blank(),...x};if(!POS[o.n])o.n=9;if(!POS[o.n].includes(o.hero))o.hero=POS[o.n][0];
     for(const k of ['stacks','shown','profiles','pids','names'])if(!o[k]||typeof o[k]!=='object')o[k]={};
     for(const [k,len] of [['hole',2],['board',5],['notes',4]]){if(!Array.isArray(o[k]))o[k]=[];o[k]=Array.from({length:len},(_,i)=>o[k][i]||'')}
-    if(!Array.isArray(o.actions))o.actions=[];if(!Array.isArray(o.payText))o.payText=x.prize?[String(x.prize)]:[];if(!(o.bb>0))o.bb=1000;return o;
+    if(!o.tbl||typeof o.tbl!=='object'||!POS[o.tbl.n])delete o.tbl;if(!Array.isArray(o.actions))o.actions=[];if(!Array.isArray(o.payText))o.payText=x.prize?[String(x.prize)]:[];if(!(o.bb>0))o.bb=1000;return o;
   }
   hands=hands.map(norm);if(imported)LS.set('assist.hands',hands);
   const dr=LS.get('assist.hdraft',null);
@@ -1077,16 +1083,25 @@ const HL=(()=>{
   const u={view:'list',custom:false,customAll:false,sheet:null,pk:null,seat:null,q:''};
   const store=()=>{if(!LS.set('assist.hands',hands))toast('保存できませんでした（ブラウザの空き容量を確認）')};
   const touch=()=>{dirty=true;LS.set('assist.hdraft',{h,dirty})};
-  // a new hand starts from the table as it is now: seats, positions, stacks, blinds, and who sits where
+  // The table as it is now is only kept as an offer (h.tbl): seats and stacks there may be incomplete or out of date,
+  // and stacks cap what can be entered, so they are applied only when the user asks.
   function fresh(stub){
     const s=ses(),pos=positions(),occ=Object.keys(pos).map(Number),o=blank();
-    o.name=s.name||'';o.level=s.level||'';o.avg=s.avg??null;o.payText=payLines();o.stub=!!stub;
+    o.avg=s.avg??null;o.payText=payLines();o.stub=!!stub;
     if(occ.length>=2){
-      o.n=occ.length;o.stacks={};
-      for(const i of occ){const p=pos[i]==='SB/BTN'?'SB':pos[i],st=s.seats[i];if(i===0)o.hero=p;if(st.stack!=null)o.stacks[p]=st.stack;const pl=st.pid&&S.players[st.pid];if(pl){o.pids[p]=pl.id;o.names[p]=dname(pl,i)}}
-    }else if(s.seats[0].stack!=null)o.stacks[o.hero]=s.seats[0].stack;
+      const t={n:occ.length,hero:'',pids:{},names:{},stacks:{}};
+      for(const i of occ){const p=pos[i]==='SB/BTN'?'SB':pos[i],st=s.seats[i];if(i===0)t.hero=p;if(st.stack>0)t.stacks[p]=st.stack;const pl=st.pid&&S.players[st.pid];if(pl){t.pids[p]=pl.id;t.names[p]=dname(pl,i)}}
+      if(POS[t.n]&&POS[t.n].includes(t.hero))o.tbl=t;
+    }
     return o;
   }
+  function useTable(withStacks){
+    const t=h.tbl;if(!t||h.actions.length)return;const own=h.stacks[h.hero];
+    h.n=t.n;h.hero=t.hero;h.pids={...t.pids};h.names={...t.names};h.stacks=withStacks?{...t.stacks}:{};if(!withStacks&&own!=null)h.stacks[h.hero]=own;
+    h.profiles={};h.shown={};h.vil='';h.tblOn=true;touch();rr();toast(withStacks?'卓の席とスタックを入れました':'卓の席を入れました');
+  }
+  const isNew=()=>!hands.some(x=>x.id===h.id);
+  function keep(){if(isNew())LS.set('assist.hctx',{n:h.n,sb:h.sb,bb:h.bb,ante:h.ante,anteType:h.anteType,name:h.name,level:h.level})}
   /* ----- format ----- */
   function hnb(x){const v=x/h.bb;return String(v<10?Math.round(v*100)/100:Math.round(v*10)/10)}
   const hfb=x=>x==null?'—':(ui.unit==='chips'||!(h.bb>0)?fc(x):hnb(x)+'BB');
@@ -1173,13 +1188,15 @@ const HL=(()=>{
     if(u.view==='list'||!h){u.view='list';return renderList()}
     if(!E('rec')||E('rec').dataset.id!==h.id){
       el.innerHTML=`<div id="hl-rec" data-id="${h.id}" style="display:flex;flex-direction:column;gap:10px"><div class="bar"><button class="mini" data-hl="back">‹ 一覧</button><div class="t" id="hl-ttl"></div><div class="unit" role="group" aria-label="表示単位"><button data-hl="unit" data-u="chips">点</button><button data-hl="unit" data-u="bb">BB</button></div></div>
-      <button class="strip" data-hl="setup" id="hl-strip"></button><div class="table" id="hl-table"></div><section class="card" id="hl-stk"></section><section class="card" id="hl-log"></section><section class="card" id="hl-sum"></section></div>`;
+      <button class="strip" data-hl="setup" id="hl-strip"></button><div class="tblbox" id="hl-tbl" hidden></div><div class="table" id="hl-table"></div><section class="card" id="hl-stk"></section><section class="card" id="hl-log"></section><section class="card" id="hl-sum"></section></div>`;
       renderSum();
     }
     document.querySelectorAll('#hl-rec .unit button').forEach(b=>b.classList.toggle('on',b.dataset.u===ui.unit));
     const z=calc(),hs=h.stacks[h.hero];
     E('ttl').innerHTML=`<b>${hands.some(x=>x.id===h.id)?'ハンドを編集':'新しいハンド'}</b>`;
     E('strip').innerHTML=`<span class="main"><span class="t1 num">${h.n}人・${fc(h.sb)}/${fc(h.bb)}・${anteText()}</span><span class="t2">${esc([h.name||'大会名なし',h.level].filter(Boolean).join(' ・ '))} ・ Hero ${pname(h.hero)}${hs!=null?' '+hfb(hs):''}</span></span><span class="edit">変更</span>`;
+    const t=h.tbl,tb=E('tbl');tb.hidden=!(t&&!h.tblOn&&!h.actions.length);
+    if(!tb.hidden){const nm=Object.values(t.names);tb.innerHTML=`<div class="tx"><b>${h.stub?'印を付けたときの卓':'今の卓'}の席を使えます</b>${t.n}人${nm.length?'（'+esc(nm.slice(0,2).join('、'))+(nm.length>2?' ほか':'')+'）':''}。使うと、相手の記録とこのハンドがつながります。</div><div class="row"><button class="mini blue" data-hl="tbl" data-s="0">席を使う</button>${Object.keys(t.stacks).length?'<button class="mini blue" data-hl="tbl" data-s="1">席とスタックを使う</button>':''}</div>`}
     renderTable(z);renderDock(z);renderLog();
     if(E('stk').contains(document.activeElement))updRem(z);else renderStk(z);
     if(!E('sum').contains(document.activeElement))renderSum();
@@ -1269,7 +1286,7 @@ const HL=(()=>{
       return `<div class="row" style="gap:6px"><button class="hitem" data-hl="open" data-id="${x.id}"><span class="cards">${x.hole.map(c=>pc(c,'sm')).join('')}</span><span class="mid"><span class="a">${esc(pn(x))} ・ ${esc(x.name||'MTT')}${x.level?' ・ '+esc(x.level):''}</span><span class="b num">${x.board.filter(Boolean).map(ctext).join(' ')||(x.actions.length?'Preflop':'アクション未入力')}${vs?' ・ vs '+esc(vs):''} ・ ${tm(d.getTime())}</span></span>${x.stub?'<span class="pill todo">未入力</span>':x.result?`<span class="pill ${x.result}">${RESULT[x.result]}</span>`:''}</button><button class="del" style="flex:none" data-hl="del" data-id="${x.id}" aria-label="削除">✕</button></div>`}).join('');
     if(!E('q'))el.innerHTML=`<div class="row"><button class="btn pri" data-hl="new">＋ 新しいハンド</button><button class="btn" data-hl="mark" style="flex:0 0 auto">印だけ付ける</button></div><div id="hl-resume"></div><input id="hl-q" type="search" placeholder="大会名・相手・タグ・メモで検索" aria-label="ハンドを検索"><div id="hl-list" style="display:flex;flex-direction:column;gap:8px"></div>`;
     E('resume').innerHTML=h&&dirty?`<button class="strip" data-hl="resume"><span class="main"><span class="t1">入力中のハンドがあります</span><span class="t2">保存していない変更が残っています</span></span><span class="edit">続ける</span></button>`:'';
-    E('list').innerHTML=items||`<section class="card blank"><b>${hands.length?'該当するハンドがありません':'記録したハンドはまだありません'}</b>${hands.length?'':'「新しいハンド」は、今の卓の席・スタック・ブラインドを引き継いで始まります。プレー中は「印だけ付ける」で場面を残し、あとから入力できます。'}</section>`;
+    E('list').innerHTML=items||`<section class="card blank"><b>${hands.length?'該当するハンドがありません':'記録したハンドはまだありません'}</b>${hands.length?'':'プレー中は「印だけ付ける」で場面を残し、あとから入力できます。'}</section>`;
   }
   /* ----- share text ----- */
   function shareText(){
@@ -1316,7 +1333,7 @@ const HL=(()=>{
     else if(u.sheet==='share'){const t=shareText();el.innerHTML=sh('LINE共有テキスト')+`<textarea class="share" id="hl-shareTa" readonly aria-label="共有テキスト">${esc(t)}</textarea><div class="row" style="margin-top:10px"><button class="btn pri" data-hl="copy">コピー</button><a class="btn line" target="_blank" rel="noopener" href="https://line.me/R/share?text=${encodeURIComponent(t)}">LINEで送る</a></div><p class="fine">コピーしてLINEに貼り付けるか、「LINEで送る」で送信先を選びます。</p>`}
   }
   function setupHTML(){
-    return sh('このハンドの設定')+`<p class="fine" style="margin:0 0 10px">新しいハンドは、今の卓の人数・席・スタック・ブラインドを引き継いでいます。違う場面を記録するときだけ変更してください。</p>
+    return sh('このハンドの設定')+`<p class="fine" style="margin:0 0 10px">人数は前回のハンド、ブラインドと大会名は「大会の設定」を引き継いでいます。</p>
     <div class="lab">テーブル人数</div><div class="ngrid">${[2,3,4,5,6,7,8,9,10].map(n=>`<button class="chip num ${h.n===n?'on':''}" data-hl="setn" data-n="${n}">${n}</button>`).join('')}</div>
     <div class="lab">Heroのポジション</div><div class="pgrid">${P().map(p=>`<button class="chip ${h.hero===p?'on':''}" data-hl="sethero" data-p="${p}">${pname(p)}</button>`).join('')}</div>
     <div class="lab">ブラインド（点数）</div>
@@ -1330,6 +1347,7 @@ const HL=(()=>{
     return sh(esc(plab(p))+(isHero?'（Hero）':''))+`
     ${n>0?`<button class="btn navy" data-hl="fold-to" style="width:100%;margin-bottom:12px">${pname(p)} まで全員 Fold（${n}人）</button>`:''}
     ${pl?`<div class="gist" style="margin:0 0 4px">${esc(pl.gist||pl.tags.join(' ・ ')||'名簿に登録済みの相手です')}</div><button class="mini blue" data-hl="player" data-pid="${pl.id}" style="margin-bottom:6px">この相手の記録を開く</button>`:''}
+    ${isHero?'':`<div class="lab">名簿の相手</div><select id="hl-sPid" aria-label="名簿の相手に結びつける"><option value="">結びつけない</option>${Object.values(S.players).sort((a,b)=>(seatOf(b.id)>0)-(seatOf(a.id)>0)||b.updated-a.updated).map(x=>`<option value="${x.id}" ${h.pids[p]===x.id?'selected':''}>${esc(dname(x,-1))}${seatOf(x.id)>0?'（着席中）':''}</option>`).join('')}</select>`}
     <div class="lab">スタック</div>
     <div class="g2"><label class="inl"><input id="hl-sStack" class="num" type="number" inputmode="numeric" min="0" value="${st??''}" placeholder="不明" aria-label="スタック（点数）"><span>点</span></label><label class="inl"><input id="hl-sStackBb" class="num" type="number" inputmode="decimal" min="0" step="any" value="${st!=null&&h.bb?hnb(st):''}" placeholder="不明" aria-label="スタック（BB）"><span>BB</span></label></div>
     ${isHero?'':`<div class="lab">このハンドで気づいた傾向</div><div class="seg">${HTAGS.map(t=>`<button class="chip ${(pr.tags||[]).includes(t)?'on':''}" data-hl="tag" data-t="${t}">${t}</button>`).join('')}</div>
@@ -1377,6 +1395,7 @@ const HL=(()=>{
     switch(a){
       case 'new':if(await guardLeave('保存していない入力があります。新しいハンドを始めますか？'))start(fresh(false));break;
       case 'mark':bookmark();break;
+      case 'tbl':useTable(d.s==='1');break;
       case 'resume':u.view='edit';render();break;
       case 'back':u.view='list';render();$('main').scrollTop=0;break;
       case 'open':{const x=hands.find(v=>v.id===d.id);if(!x)break;if(h&&h.id!==x.id&&!await guardLeave('保存していない入力があります。このハンドを開きますか？'))break;start(norm(clone(x)));break}
@@ -1407,9 +1426,9 @@ const HL=(()=>{
       case 'share':openS('share');break;
       case 'copy':{const t=shareText();let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(err){const ta=E('shareTa');ta.focus();ta.select();try{ok=document.execCommand('copy')}catch(e2){}}toast(ok?'コピーしました。LINEに貼り付けてください':'テキストを長押しでコピーしてください');break}
       case 'save':saveHand();break;
-      case 'setn':{const n=+d.n;if(n===h.n)break;if(!await guardReset())break;const hs=h.stacks[h.hero];h.n=n;if(!P().includes(h.hero))h.hero=P().includes('BTN')?'BTN':'SB';h.stacks={};if(hs!=null)h.stacks[h.hero]=hs;h.profiles={};h.shown={};h.pids={};h.names={};touch();renderS();break}
+      case 'setn':{const n=+d.n;if(n===h.n)break;if(!await guardReset())break;const hs=h.stacks[h.hero];h.n=n;if(!P().includes(h.hero))h.hero=P().includes('BTN')?'BTN':'SB';h.stacks={};if(hs!=null)h.stacks[h.hero]=hs;h.profiles={};h.shown={};h.pids={};h.names={};h.tblOn=true;touch();keep();renderS();break}
       case 'sethero':{const p=d.p;if(p===h.hero)break;const a2=h.stacks[h.hero],b2=h.stacks[p];if(!h.actions.length){delete h.stacks[h.hero];delete h.stacks[p];if(a2!=null)h.stacks[p]=a2;if(b2!=null)h.stacks[h.hero]=b2}h.hero=p;touch();if(u.sheet==='seat')closeS();else renderS();break}
-      case 'antetype':{if(d.k===h.anteType)break;if(!await guardReset())break;h.anteType=d.k;if(d.k!=='none'&&!h.ante)h.ante=h.bb;touch();renderS();break}
+      case 'antetype':{if(d.k===h.anteType)break;if(!await guardReset())break;h.anteType=d.k;if(d.k!=='none'&&!h.ante)h.ante=h.bb;touch();keep();renderS();break}
       case 'tag':{const p=u.seat,pr=h.profiles[p]=h.profiles[p]||{tags:[],note:''};pr.tags=pr.tags.includes(d.t)?pr.tags.filter(t=>t!==d.t):[...pr.tags,d.t];touch();el.classList.toggle('on');break}
     }
   });
@@ -1421,8 +1440,8 @@ const HL=(()=>{
     else if(t.id==='hl-memo'){h.memo=t.value;touch();grow(t)}
     else if(t.id==='hl-tags'){h.tags=t.value;touch()}
     else if(t.id==='hl-amt')amtHint();
-    else if(t.id==='hl-fName'){h.name=t.value;touch()}
-    else if(t.id==='hl-fLevel'){h.level=t.value;touch()}
+    else if(t.id==='hl-fName'){h.name=t.value;touch();keep()}
+    else if(t.id==='hl-fLevel'){h.level=t.value;touch();keep()}
     else if(t.id==='hl-sNote'){const pr=h.profiles[u.seat]=h.profiles[u.seat]||{tags:[],note:''};pr.note=t.value;touch()}
     else if(t.id==='hl-sStack'||t.id==='hl-sStackBb'){const bbm=t.id==='hl-sStackBb',v=parseFloat(t.value);setStack(u.seat,isFinite(v)?(bbm?v*h.bb:v):null);const o=E(bbm?'sStack':'sStackBb');if(o)o.value=isFinite(v)?(bbm?Math.round(v*h.bb):hnb(v)):''}
     else if(t.dataset.hstk){const k=t.dataset.hstk,p=k==='hero'?h.hero:vilPos(),v=parseFloat(t.value),bbm=t.dataset.u==='bb';if(k==='vil')h.vil=p;setStack(p,isFinite(v)?(bbm?v*h.bb:v):null);
@@ -1431,15 +1450,16 @@ const HL=(()=>{
   document.addEventListener('change',async e=>{
     const t=e.target;if(!h||!t.closest('.hl'))return;
     if(t.id==='hl-kVil'){h.vil=t.value;touch();renderStk();return}
+    if(t.id==='hl-sPid'){const p=u.seat,pl=S.players[t.value];for(const k of Object.keys(h.pids))if(k===p||h.pids[k]===t.value){delete h.pids[k];delete h.names[k]}if(pl){h.pids[p]=pl.id;h.names[p]=dname(pl,-1)}touch();renderS();return}
     const key={'hl-fSb':'sb','hl-fBb':'bb','hl-fAnte':'ante'}[t.id];if(!key)return;
     const v=Math.max(0,Math.round(parseFloat(t.value)||0));if(v===h[key])return;
     if(key==='bb'&&v<=0){t.value=h.bb;return toast('BBは1以上で入力してください')}
     if(!await guardReset()){t.value=h[key];return}
     if(key==='bb'){const old=h.bb;if(h.sb===Math.round(old/2))h.sb=Math.round(v/2);if(h.ante===old)h.ante=v}
-    h[key]=v;touch();renderS();
+    h[key]=v;touch();keep();renderS();
   });
   document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='hl-amt'){e.preventDefault();document.querySelector('[data-hl="amt-ok"]').click()}if(e.key==='Escape'&&u.sheet)closeS()});
-  return {render:rr,editing:()=>u.view==='edit'&&!!h,bookmark,count:()=>hands.length,imported,all:()=>hands,
+  return {sesChanged(){const c=LS.get('assist.hctx',null);if(c)LS.set('assist.hctx',{n:c.n})},render:rr,editing:()=>u.view==='edit'&&!!h,bookmark,count:()=>hands.length,imported,all:()=>hands,
     restore(a){hands=a.map(norm);store();h=null;dirty=false;u.view='list';LS.set('assist.hdraft',null)},
     withPlayer:pid=>hands.filter(x=>Object.values(x.pids||{}).includes(pid)),
     async open(id){const x=hands.find(v=>v.id===id);if(!x)return;if(h&&h.id!==x.id&&!await guardLeave('保存していない入力があります。このハンドを開きますか？'))return;ui.tab='log';start(norm(clone(x)))}};
