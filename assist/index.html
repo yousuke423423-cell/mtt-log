@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 16:43";
+window.MTT_BUILD="2026-11-26 16:59";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -474,6 +474,12 @@ nav button{min-height:50px}
 .out3 small{text-wrap:balance;line-height:1.3;min-height:2.6em;display:flex;align-items:center;justify-content:center}
 @media (max-width:430px){.logo span{display:none}}
 .hl .hitem .b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4}
+/* ---- from DESIGN.md §9 (usability baseline): text contrast 4.5:1 or better on every surface it sits on, 3px focus ring ---- */
+:root{--muted:#5f6169;--faint:#6c6e76;--warn:#9a560a;--ok:#0a744d}
+:root[data-theme="dark"]{--muted:#9b9ca3;--faint:#85868e;--warn:#f2aa4d;--ok:#44d394}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.g2.caps{font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+@media (max-width:374px){.seat{width:62px}.hl .seat{width:56px}}
 @media (max-height:690px){.pk button{height:38px;font-size:17px}.pk{gap:5px}.pkrow{padding:4px}}
 @media (max-width:359px){.seat{width:56px}}
 @media (min-width:520px){.table{height:370px}.felt{inset:30px 60px 34px}}
@@ -703,7 +709,7 @@ function playerHTML(){
   const i=seatOf(p.id),pos=i>0?positions()[i]:'',all=[...TAGS,...S.tags.filter(t=>!TAGS.includes(t))],hd=ui.hd;
   const empties=ses().seats.map((s,k)=>k>0&&!s.pid?k:0).filter(Boolean);
   return shead(esc(dname(p,i))+(pos?' ・ '+pos:''))+`
-  <div class="g2"><input id="pName" value="${esc(p.name)}" placeholder="名前・あだ名" autocomplete="off" aria-label="名前"><input id="pLook" value="${esc(p.look)}" placeholder="見た目（赤キャップ等）" autocomplete="off" aria-label="見た目の特徴"></div>
+  <div class="g2 caps"><span>名前・あだ名</span><span>見た目の特徴</span></div><div class="g2"><input id="pName" value="${esc(p.name)}" placeholder="例：Tanaka" autocomplete="off" aria-label="名前"><input id="pLook" value="${esc(p.look)}" placeholder="例：赤い帽子" autocomplete="off" aria-label="見た目の特徴"></div>
   <div class="lab">ひとことで言うと（卓の一覧に表示）</div><input id="pGist" value="${esc(p.gist)}" placeholder="例：3betに降りない。リバーのブラフは少ない" autocomplete="off" aria-label="要点">
   ${i>0?`<div class="lab">スタック</div>${stackRow(i,'<span>現在</span>')}`:''}
   <div class="lab">テル・リーク（観測 → 確定／否定）</div>
@@ -774,7 +780,7 @@ function sesHTML(){
   const s=ses(),p=s.pay,log=LS.get('mtt.ctx',null),canImp=log&&log.pay&&Array.isArray(log.pay.rows)&&log.pay.rows.length;
   const row=(r,i)=>`<div class="payrow"><input class="num" type="number" inputmode="numeric" min="1" data-pr="${i}" data-k="from" value="${r.from??''}" aria-label="順位（から）"><span>〜</span><input class="num" type="number" inputmode="numeric" min="1" data-pr="${i}" data-k="to" value="${r.to??''}" placeholder="${r.from??''}" aria-label="順位（まで）"><span>位</span><label class="inl"><input class="num" type="number" inputmode="numeric" min="0" data-pr="${i}" data-k="amt" value="${r.amt??''}" placeholder="賞金額" aria-label="賞金額"><span id="payh${i}">${r.amt?fm(r.amt):''}</span></label><button class="del" data-a="pay-del" data-i="${i}" aria-label="この行を削除">✕</button></div>`;
   return shead('大会の設定')+`
-  <div class="g2" style="grid-template-columns:1.7fr 1fr"><input id="sName" value="${esc(s.name)}" placeholder="大会名" autocomplete="off" aria-label="大会名"><input id="sLevel" value="${esc(s.level)}" placeholder="Lv.16" autocomplete="off" aria-label="ブラインドレベル"></div>
+  <div class="g2 caps" style="grid-template-columns:1.7fr 1fr"><span>大会名</span><span>ブラインドレベル</span></div><div class="g2" style="grid-template-columns:1.7fr 1fr"><input id="sName" value="${esc(s.name)}" placeholder="例：JOPT Main" autocomplete="off" aria-label="大会名"><input id="sLevel" value="${esc(s.level)}" placeholder="Lv.16" autocomplete="off" aria-label="ブラインドレベル"></div>
   <div class="lab">ブラインド（点数）</div>
   <div class="g3"><label class="inl"><input id="sSb" class="num" type="number" inputmode="numeric" min="0" value="${s.sb}" aria-label="SB"><span>SB</span></label><label class="inl"><input id="sBb" class="num" type="number" inputmode="numeric" min="1" value="${s.bb}" aria-label="BB"><span>BB</span></label><label class="inl"><input id="sAnte" class="num" type="number" inputmode="numeric" min="0" value="${s.ante}" aria-label="Ante"><span>Ante</span></label></div>
   <div class="lab">テーブル人数</div><div class="ngrid">${[2,3,4,5,6,7,8,9,10].map(n=>`<button class="chip num ${s.n===n?'on':''}" data-a="setn" data-n="${n}">${n}</button>`).join('')}</div>
