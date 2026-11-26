@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 16:15";
+window.MTT_BUILD="2026-11-26 16:22";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -620,9 +620,9 @@ function assignHTML(){
 }
 
 /* ---------- prize structure ---------- */
-function payRows(){return ses().pay.rows.filter(r=>r.from>=1&&r.amt!=null).map(r=>({from:r.from,to:Math.max(r.to||r.from,r.from),amt:r.amt})).sort((a,b)=>a.from-b.from)}
-function payInfo(){
-  const p=ses().pay,rows=payRows(),o={rows};o.itm=p.itm||(rows.length?rows[rows.length-1].to:null);
+function payRows(p=ses().pay){return p.rows.filter(r=>r.from>=1&&r.amt!=null).map(r=>({from:r.from,to:Math.max(r.to||r.from,r.from),amt:r.amt})).sort((a,b)=>a.from-b.from)}
+function payInfo(p=ses().pay){
+  const rows=payRows(p),o={rows};o.itm=p.itm||(rows.length?rows[rows.length-1].to:null);
   if(rows.length){if(rows[0].from===1)o.first=rows[0].amt;o.min=rows[rows.length-1].amt}
   if(p.left&&o.itm){
     if(p.left>o.itm)o.bubble=p.left-o.itm;
@@ -630,8 +630,8 @@ function payInfo(){
   }
   return o;
 }
-function payLines(){
-  const p=ses().pay,o=payInfo(),L=[],a=[];
+function payLines(p=ses().pay){
+  const o=payInfo(p),L=[],a=[];
   if(p.left)L.push(`残り ${fc(p.left)}${p.entries?'/'+fc(p.entries):''}人${o.itm?`（ITM ${fc(o.itm)}人）`:''}`);
   else if(p.entries||o.itm)L.push([p.entries?`エントリー ${fc(p.entries)}人`:'',o.itm?`ITM ${fc(o.itm)}人`:''].filter(Boolean).join(' / '));
   if(o.bubble)a.push(`バブルまであと${o.bubble}人`);
@@ -1073,15 +1073,24 @@ const HL=(()=>{
   const E=id=>document.getElementById('hl-'+id),clone=x=>JSON.parse(JSON.stringify(x));
   let hands=LS.get('assist.hands',null),imported=0;
   if(!Array.isArray(hands)){const old=LS.get('mtt.hands',[]);hands=Array.isArray(old)?old:[];imported=hands.length} // carry over hands saved in MTT LOG on this site
-  // settings last used in a hand; blinds, name and level are dropped from it whenever the tournament settings are edited, so the most recent edit wins
-  function ctx(){let c=LS.get('assist.hctx',null);if(!c){const o=LS.get('mtt.ctx',null)||{};c={n:o.n};if(!S.ses.name&&!S.ses.level&&o.bb>0)Object.assign(c,{sb:o.sb,bb:o.bb,ante:o.ante,anteType:o.anteType,name:o.name,level:o.level})}return c}
-  function blank(){const s=ses(),c=ctx(),own=c.bb>0,n=POS[c.n]?c.n:POS[s.n]?s.n:9,ante=own?(c.ante||0):(s.ante||0);
-    return {id:'h'+uid(),created:Date.now(),updated:0,name:c.name??s.name??'',level:c.level??s.level??'',n,sb:own?(c.sb||0):s.sb,bb:own?c.bb:s.bb,ante,anteType:own&&c.anteType?c.anteType:ante>0?'bba':'none',avg:null,payText:[],vil:'',hero:POS[n].includes('BTN')?'BTN':'SB',stacks:{},pids:{},names:{},hole:['',''],board:['','','','',''],shown:{},actions:[],street:0,profiles:{},notes:['','','',''],memo:'',tags:'',result:'',stub:false}}
+  // A new hand takes its settings from the last new hand or from the tournament settings, whichever was edited more recently.
+  // Two groups are tracked separately: A = name, level, blinds; B = average stack, players left and the prize table.
+  const sigA=()=>{const s=ses();return JSON.stringify([s.name,s.level,s.sb,s.bb,s.ante])},sigB=()=>{const s=ses();return JSON.stringify([s.avg,s.pay])};
+  const noPay=()=>({rows:[],left:null,itm:null,entries:null});
+  function ctx(){
+    const s=ses();let c=LS.get('assist.hctx',null);
+    if(!c){const o=LS.get('mtt.ctx',null)||{};c={n:o.n}; // first run: carry on from the old MTT LOG where the tournament settings are still untouched
+      if(!s.name&&!s.level&&o.bb>0)Object.assign(c,{sb:o.sb,bb:o.bb,ante:o.ante,anteType:o.anteType,name:o.name,level:o.level,sigA:sigA()});
+      if(!s.pay.rows.length&&!s.pay.left&&s.avg==null&&o.pay&&Array.isArray(o.pay.rows))Object.assign(c,{avg:o.avg??null,pay:o.pay,sigB:sigB()})}
+    return {c,A:c.bb>0&&c.sigA===sigA(),B:!!c.pay&&c.sigB===sigB()};
+  }
+  function blank(){const s=ses(),{c,A,B}=ctx(),n=POS[c.n]?c.n:POS[s.n]?s.n:9,ante=A?(c.ante||0):(s.ante||0);
+    return {id:'h'+uid(),created:Date.now(),updated:0,name:(A?c.name:s.name)||'',level:(A?c.level:s.level)||'',n,sb:A?(c.sb||0):s.sb,bb:A?c.bb:s.bb,ante,anteType:A&&c.anteType?c.anteType:ante>0?'bba':'none',avg:(B?c.avg:s.avg)??null,pay:clone(B?c.pay:s.pay),payText:[],vil:'',hero:POS[n].includes('BTN')?'BTN':'SB',stacks:{},pids:{},names:{},hole:['',''],board:['','','','',''],shown:{},actions:[],street:0,profiles:{},notes:['','','',''],memo:'',tags:'',result:'',stub:false}}
   function norm(x){
     const o={...blank(),...x};if(!POS[o.n])o.n=9;if(!POS[o.n].includes(o.hero))o.hero=POS[o.n][0];
     for(const k of ['stacks','shown','profiles','pids','names'])if(!o[k]||typeof o[k]!=='object')o[k]={};
     for(const [k,len] of [['hole',2],['board',5],['notes',4]]){if(!Array.isArray(o[k]))o[k]=[];o[k]=Array.from({length:len},(_,i)=>o[k][i]||'')}
-    delete o.tbl;delete o.tblOn;if(!Array.isArray(o.actions))o.actions=[];if(!Array.isArray(o.payText))o.payText=x.prize?[String(x.prize)]:[];if(!(o.bb>0))o.bb=1000;return o;
+    delete o.tbl;delete o.tblOn;if(!o.pay||!Array.isArray(o.pay.rows))o.pay=noPay();if(!Array.isArray(o.actions))o.actions=[];if(!Array.isArray(o.payText))o.payText=x.prize?[String(x.prize)]:[];if(!(o.bb>0))o.bb=1000;return o;
   }
   hands=hands.map(norm);if(imported)LS.set('assist.hands',hands);
   const dr=LS.get('assist.hdraft',null);
@@ -1090,9 +1099,9 @@ const HL=(()=>{
   const store=()=>{if(!LS.set('assist.hands',hands))toast('保存できませんでした（ブラウザの空き容量を確認）')};
   const touch=()=>{dirty=true;LS.set('assist.hdraft',{h,dirty})};
   // Logging never depends on the player table: who the opponents are is attached afterwards, from the summary card.
-  function fresh(stub){const s=ses(),o=blank();o.avg=s.avg??null;o.payText=payLines();o.stub=!!stub;return o}
+  function fresh(stub){const o=blank();o.stub=!!stub;return o}
   const isNew=()=>!hands.some(x=>x.id===h.id);
-  function keep(){if(isNew())LS.set('assist.hctx',{n:h.n,sb:h.sb,bb:h.bb,ante:h.ante,anteType:h.anteType,name:h.name,level:h.level})}
+  function keep(){if(isNew())LS.set('assist.hctx',{n:h.n,sb:h.sb,bb:h.bb,ante:h.ante,anteType:h.anteType,name:h.name,level:h.level,sigA:sigA(),avg:h.avg,pay:h.pay,sigB:sigB()})}
   /* ----- format ----- */
   function hnb(x){const v=x/h.bb;return String(v<10?Math.round(v*100)/100:Math.round(v*10)/10)}
   const hfb=x=>x==null?'—':(ui.unit==='chips'||!(h.bb>0)?fc(x):hnb(x)+'BB');
@@ -1291,7 +1300,7 @@ const HL=(()=>{
     L.push('【'+(h.name||'MTTハンドレビュー')+'】');
     L.push(`${h.level?h.level+' / ':''}${h.n}人 / ${fc(h.sb)}-${fc(h.bb)}${h.anteType==='none'||!h.ante?'':' ('+anteText()+')'}`);
     if(h.avg!=null)L.push('Avg '+hfb(h.avg));
-    L.push(...h.payText);
+    const pl=payLines(h.pay);L.push(...(pl.length?pl:h.payText));
     L.push(`Hero ${pname(h.hero)} ${h.hole.some(Boolean)?C(h.hole):'??'}${h.stacks[h.hero]!=null?'（'+hfb(h.stacks[h.hero])+'）':''}`);
     const inv=[...new Set(h.actions.filter(a=>a.t!=='F'&&a.p!==h.hero).map(a=>a.p))].filter(p=>h.stacks[p]!=null);
     if(inv.length)L.push('相手 '+inv.map(p=>`${pname(p)} ${hfb(h.stacks[p])}`).join(' / '));
@@ -1330,13 +1339,24 @@ const HL=(()=>{
     else if(u.sheet==='share'){const t=shareText();el.innerHTML=sh('LINE共有テキスト')+`<textarea class="share" id="hl-shareTa" readonly aria-label="共有テキスト">${esc(t)}</textarea><div class="row" style="margin-top:10px"><button class="btn pri" data-hl="copy">コピー</button><a class="btn line" target="_blank" rel="noopener" href="https://line.me/R/share?text=${encodeURIComponent(t)}">LINEで送る</a></div><p class="fine">コピーしてLINEに貼り付けるか、「LINEで送る」で送信先を選びます。</p>`}
   }
   function setupHTML(){
-    return sh('このハンドの設定')+`<p class="fine" style="margin:0 0 10px">人数は前回のハンド、ブラインドと大会名は「大会の設定」を引き継いでいます。</p>
+    const pay=h.pay,sp=ses().pay,sesPay=(sp.rows.length||sp.left)&&JSON.stringify(sp)!==JSON.stringify(pay);
+    return sh('このハンドの設定')+`<p class="fine" style="margin:0 0 10px">前回のハンドか「大会の設定」のうち、新しく入力したほうを引き継いでいます。</p>
     <div class="lab">テーブル人数</div><div class="ngrid">${[2,3,4,5,6,7,8,9,10].map(n=>`<button class="chip num ${h.n===n?'on':''}" data-hl="setn" data-n="${n}">${n}</button>`).join('')}</div>
     <div class="lab">Heroのポジション</div><div class="pgrid">${P().map(p=>`<button class="chip ${h.hero===p?'on':''}" data-hl="sethero" data-p="${p}">${pname(p)}</button>`).join('')}</div>
     <div class="lab">ブラインド（点数）</div>
     <div class="g3"><label class="inl"><input id="hl-fSb" class="num" type="number" inputmode="numeric" min="0" value="${h.sb}" aria-label="SB"><span>SB</span></label><label class="inl"><input id="hl-fBb" class="num" type="number" inputmode="numeric" min="1" value="${h.bb}" aria-label="BB"><span>BB</span></label><label class="inl"><input id="hl-fAnte" class="num" type="number" inputmode="numeric" min="0" value="${h.ante}" aria-label="Ante" ${h.anteType==='none'?'disabled':''}><span>Ante</span></label></div>
     <div class="seg" style="margin-top:8px">${[['bba','BBアンティ'],['each','全員アンティ'],['none','アンティなし']].map(([k,v])=>`<button class="chip ${h.anteType===k?'on':''}" data-hl="antetype" data-k="${k}">${v}</button>`).join('')}</div>
     <div class="lab">大会名・ブラインドレベル</div><div class="g2" style="grid-template-columns:1.7fr 1fr"><input id="hl-fName" value="${esc(h.name)}" placeholder="大会名" autocomplete="off" aria-label="大会名"><input id="hl-fLevel" value="${esc(h.level)}" placeholder="Lv.16" autocomplete="off" aria-label="ブラインドレベル"></div>
+    <div class="lab">アベレージスタック</div>
+    <div class="g2"><label class="inl"><input id="hl-fAvg" class="num" type="number" inputmode="numeric" min="0" value="${h.avg??''}" placeholder="例 70000" aria-label="アベレージ（点数）"><span>点</span></label><label class="inl"><input id="hl-fAvgBb" class="num" type="number" inputmode="decimal" min="0" step="any" value="${h.avg!=null&&h.bb?hnb(h.avg):''}" placeholder="例 35" aria-label="アベレージ（BB）"><span>BB</span></label></div>
+    <div class="lab">残り人数など</div>
+    <div class="g3"><label class="inl"><input id="hl-pLeft" class="num" type="number" inputmode="numeric" min="1" value="${pay.left??''}" aria-label="残り人数"><span>残り</span></label><label class="inl"><input id="hl-pItm" class="num" type="number" inputmode="numeric" min="1" value="${pay.itm??''}" placeholder="${payInfo(pay).itm??''}" aria-label="インマネ人数"><span>ITM</span></label><label class="inl"><input id="hl-pEnt" class="num" type="number" inputmode="numeric" min="1" value="${pay.entries??''}" aria-label="エントリー数"><span>参加</span></label></div>
+    <div class="paysum num" id="hl-paySum" style="margin-top:10px">${esc(payLines(pay).join('\n'))}</div>
+    <div class="lab">賞金表</div>
+    ${pay.rows.map((r,i)=>`<div class="payrow"><input class="num" type="number" inputmode="numeric" min="1" data-hpr="${i}" data-k="from" value="${r.from??''}" aria-label="順位（から）"><span>〜</span><input class="num" type="number" inputmode="numeric" min="1" data-hpr="${i}" data-k="to" value="${r.to??''}" placeholder="${r.from??''}" aria-label="順位（まで）"><span>位</span><label class="inl"><input class="num" type="number" inputmode="numeric" min="0" data-hpr="${i}" data-k="amt" value="${r.amt??''}" placeholder="賞金額" aria-label="賞金額"><span id="hl-payh${i}">${r.amt?fm(r.amt):''}</span></label><button class="del" data-hl="pay-del" data-i="${i}" aria-label="この行を削除">✕</button></div>`).join('')||'<div class="hint">行を追加するか、下の欄に貼り付けて取り込みます。</div>'}
+    <div class="row" style="margin-top:10px"><button class="btn" data-hl="pay-add">＋ 行を追加</button>${sesPay?'<button class="btn" data-hl="pay-ses">大会の設定から取込</button>':''}</div>
+    <textarea id="hl-payPaste" rows="3" style="margin-top:8px" placeholder="貼り付けて取り込む&#10;1位 3,000,000&#10;10-12位 15万" aria-label="賞金表のテキスト"></textarea>
+    <button class="btn" data-hl="pay-imp" style="width:100%;margin-top:8px">貼り付けた内容を取り込む</button>
     <button class="btn pri" data-hl="close" style="width:100%;margin-top:16px">ハンドに戻る</button>`;
   }
   function seatHTML(){
@@ -1391,6 +1411,10 @@ const HL=(()=>{
     switch(a){
       case 'new':if(await guardLeave('保存していない入力があります。新しいハンドを始めますか？'))start(fresh(false));break;
       case 'mark':bookmark();break;
+      case 'pay-add':{const r=h.pay.rows,l=r[r.length-1];r.push({from:l&&l.from?(l.to||l.from)+1:1,to:null,amt:null});touch();keep();renderS();const i=document.querySelector(`[data-hpr="${r.length-1}"][data-k="amt"]`);if(i)i.focus();break}
+      case 'pay-del':h.pay.rows.splice(+d.i,1);touch();keep();renderS();break;
+      case 'pay-imp':{const rows=parsePay(E('payPaste').value);if(!rows.length){toast('読み取れる行がありません（例：1位 3,000,000）');break}if(h.pay.rows.length&&!await ask(`今の賞金表を、読み取った${rows.length}行で置き換えますか？`,'置き換える'))break;h.pay.rows=rows;touch();keep();renderS();toast(rows.length+'行を取り込みました');break}
+      case 'pay-ses':{const s=ses();if(h.pay.rows.length&&!await ask('このハンドの賞金表と人数を、「大会の設定」の内容で置き換えますか？','置き換える'))break;h.pay=clone(s.pay);if(s.avg!=null)h.avg=s.avg;touch();keep();renderS();toast('大会の設定から取り込みました');break}
       case 'unlink':delete h.pids[d.p];delete h.names[d.p];touch();if(!isNew())saveHand();else{renderSum();rr()}break;
       case 'resume':u.view='edit';render();break;
       case 'back':u.view='list';render();$('main').scrollTop=0;break;
@@ -1438,6 +1462,9 @@ const HL=(()=>{
     else if(t.id==='hl-amt')amtHint();
     else if(t.id==='hl-fName'){h.name=t.value;touch();keep()}
     else if(t.id==='hl-fLevel'){h.level=t.value;touch();keep()}
+    else if(t.id==='hl-fAvg'||t.id==='hl-fAvgBb'){const bbm=t.id==='hl-fAvgBb',v=parseFloat(t.value);h.avg=isFinite(v)&&v>=0?Math.round(bbm?v*h.bb:v):null;touch();keep();const o=E(bbm?'fAvg':'fAvgBb');if(o)o.value=h.avg==null?'':(bbm?h.avg:hnb(h.avg))}
+    else if(t.dataset.hpr!=null){const r=h.pay.rows[+t.dataset.hpr],v=parseFloat(t.value);if(!r)return;r[t.dataset.k]=isFinite(v)&&v>=0?Math.round(v):null;touch();keep();if(t.dataset.k==='amt')E('payh'+t.dataset.hpr).textContent=r.amt?fm(r.amt):'';E('paySum').textContent=payLines(h.pay).join('\n')}
+    else if(t.id==='hl-pLeft'||t.id==='hl-pItm'||t.id==='hl-pEnt'){const v=parseInt(t.value,10);h.pay[{'hl-pLeft':'left','hl-pItm':'itm','hl-pEnt':'entries'}[t.id]]=v>0?v:null;touch();keep();E('paySum').textContent=payLines(h.pay).join('\n')}
     else if(t.id==='hl-sNote'){const pr=h.profiles[u.seat]=h.profiles[u.seat]||{tags:[],note:''};pr.note=t.value;touch()}
     else if(t.id==='hl-sStack'||t.id==='hl-sStackBb'){const bbm=t.id==='hl-sStackBb',v=parseFloat(t.value);setStack(u.seat,isFinite(v)?(bbm?v*h.bb:v):null);const o=E(bbm?'sStack':'sStackBb');if(o)o.value=isFinite(v)?(bbm?Math.round(v*h.bb):hnb(v)):''}
     else if(t.dataset.hstk){const k=t.dataset.hstk,p=k==='hero'?h.hero:vilPos(),v=parseFloat(t.value),bbm=t.dataset.u==='bb';if(k==='vil')h.vil=p;setStack(p,isFinite(v)?(bbm?v*h.bb:v):null);
