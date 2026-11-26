@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 17:39";
+window.MTT_BUILD="2026-11-26 17:48";
 try{var rkm=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);if(rkm)localStorage.setItem("assist.rkPending",rkm[1])}catch(e){}
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
@@ -559,7 +559,7 @@ const RPOS=['UTG','LJ','HJ','CO','BTN','SB'],RORD=['UTG','UTG+1','LJ','HJ','CO',
 const RCOL={r:'#e4573d',a:'#8e1b2e',c:'#2f9e6b',f:'var(--fold)'};
 const RLAB={open:{r:'オープン',a:'オールイン',c:'リンプ',f:'フォールド'},bb:{r:'3bet',a:'オールイン',c:'コール',f:'フォールド'},v3:{r:'4bet',a:'オールイン',c:'コール',f:'フォールド'},b3:{r:'3bet',a:'オールイン',c:'コール',f:'フォールド'}};
 const B3POS=['UTG+1','LJ','HJ','CO','BTN','SB'],ROPEN=['UTG','LJ','HJ','CO','BTN'];
-const rtwo=g=>g.kind==='v3'||g.kind==='b3',rheroes=g=>g.kind==='b3'?B3POS:RPOS,rvsList=g=>g.kind==='v3'?RORD.slice(1):ROPEN,rvsOk=(g,p)=>g.kind==='v3'?RORD.indexOf(p)>RORD.indexOf(g.pos):RORD.indexOf(p)<RORD.indexOf(g.pos);
+const rtwo=g=>g.kind==='v3'||g.kind==='b3',rheroes=g=>(g.kind==='b3'?B3POS:RPOS).filter(p=>p!=='SB'||g.kind==='b3'||[...Object.keys(RG),...IMG].some(k=>k.startsWith(g.kind+'|SB|'))),rvsList=g=>g.kind==='v3'?RORD.slice(1):ROPEN,rvsOk=(g,p)=>g.kind==='v3'?RORD.indexOf(p)>RORD.indexOf(g.pos):RORD.indexOf(p)<RORD.indexOf(g.pos);
 let RG=LS.get('assist.ranges',{});if(!RG||typeof RG!=='object')RG={};
 // screenshots of charts live in IndexedDB on this device only
 const IMG=new Set(),IMGURL={};let idbP=null;
@@ -967,10 +967,10 @@ function renderRange(){
   for(let i=0;i<169;i++){const r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0;grid+=`<button data-a="rcell" data-h="${i}" class="${r+a+c>=50?'on':''} ${ui.rhand===i?'cur':''} ${out(i)&&!(r+a+c)?'out':''}" style="background:${cellBg(r,a,c)}">${handName(i)}</button>`}
   let det='ハンドをタップすると、頻度を表示します。';
   if(ui.rhand!=null){const i=ui.rhand,r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0,parts=[];if(r)parts.push(`${L.r} ${r}%`);if(a)parts.push(`${L.a} ${a}%`);if(c)parts.push(`${L.c} ${c}%`);if(100-r-a-c>0)parts.push(`${L.f} ${100-r-a-c}%`);det=`<b>${handName(i)}</b>　${out(i)&&!(r+a+c)?'オープンしないハンド':parts.join(' ／ ')}${ch&&ch.z&&ch.z[i]?`<br><span style="font-weight:600;color:var(--muted)">${L.r}のサイズ別：${esc(ch.z[i])}</span>`:''}`}
-  $('vRange').innerHTML=`${!LS.get('assist.rk',null)&&!rcount()?`<section class="card"><h2>レンジ表を読み込む<span>最初の1回だけ</span></h2><div class="qnote" style="margin-top:0"><input id="rkIn" placeholder="リンクか合言葉を貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="リンクか合言葉"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div><p class="fine">受け取ったリンクをコピーして、ここに貼り付けてください。</p></section>`:''}<section class="card">
+  $('vRange').innerHTML=`${!LS.get('assist.rk',null)&&!rcount()?`<section class="card"><h2>レンジ表を読み込む<span>最初の1回だけ</span></h2><div class="qnote" style="margin-top:0"><input id="rkIn" placeholder="受け取ったリンクを貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="受け取ったリンク"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div><p class="fine">受け取ったリンクをコピーして、ここに貼り付けてください。</p></section>`:''}<section class="card">
     <div class="rsel" style="grid-template-columns:1fr 1fr">${[['open','オープン'],['bb','BBディフェンス'],['b3','3betする側'],['v3','3betされた側']].map(([v,l])=>`<button class="chip ${g.kind===v?'on':''}" data-a="rkind" data-v="${v}">${l}</button>`).join('')}</div>
     <div class="rlab">${g.kind==='bb'?'オープンした相手のポジション':g.kind==='v3'?'自分（オープンした側）のポジション':g.kind==='b3'?'自分（3betする側）のポジション':'ポジション'}</div>
-    <div class="rsel k6">${rheroes(g).map(p=>`<button class="chip ${g.pos===p?'on':''}" data-a="rpos" data-v="${p}">${p}</button>`).join('')}</div>
+    <div class="rsel" style="grid-template-columns:repeat(${rheroes(g).length},1fr)">${rheroes(g).map(p=>`<button class="chip ${g.pos===p?'on':''}" data-a="rpos" data-v="${p}">${p}</button>`).join('')}</div>
     ${rtwo(g)?`<div class="rlab">${g.kind==='v3'?'3betしてきた相手のポジション':'オープンした相手のポジション'}</div><div class="rsel" style="grid-template-columns:repeat(${rvsList(g).length},1fr)">${rvsList(g).map(p=>`<button class="chip ${g.vs===p?'on':''}" data-a="rvs" data-v="${p}" style="padding:0;font-size:12px" ${rvsOk(g,p)?'':'disabled'}>${p}</button>`).join('')}</div>`:''}
     <div class="rlab">スタック（BB）</div>
     <div class="rsel k9" style="grid-template-columns:repeat(${rdepths().length},1fr)">${rdepths().map(b=>`<button class="chip num ${g.bb===b?'on':''}" data-a="rbb" data-v="${b}" style="${g.bb!==b&&has(kOf({bb:b}))?'border-color:var(--ink);border-width:2px':''}">${b}</button>`).join('')}</div>
@@ -990,7 +990,7 @@ function renderRange(){
     ${hasImg?'':'<button class="btn" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button>'}`:''}
   </section>
   <section class="card"><h2>レンジデータ<span>登録済み ${rcount()} 枚</span></h2>
-    ${LS.get('assist.rk',null)?`<div class="bar" style="margin-bottom:10px"><div class="t" style="white-space:normal">8maxのレンジ表を読み込み済みです。</div><button class="mini" data-a="rk-again">読み込み直す</button></div>`:rcount()?`<div class="rlab" style="margin-top:0">合言葉でレンジ表を読み込む</div><div class="qnote" style="margin:6px 0 12px"><input id="rkIn" placeholder="合言葉かリンクを貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="合言葉"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div>`:''}
+    ${LS.get('assist.rk',null)?`<div class="bar" style="margin-bottom:10px"><div class="t" style="white-space:normal">8maxのレンジ表を読み込み済みです。</div><button class="mini" data-a="rk-again">読み込み直す</button></div>`:rcount()?`<div class="rlab" style="margin-top:0">リンクを貼り付けてレンジ表を読み込む</div><div class="qnote" style="margin:6px 0 12px"><input id="rkIn" placeholder="受け取ったリンクを貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="受け取ったリンク"><button class="btn pri" data-a="rk-load" style="flex:none">読み込む</button></div>`:''}
     <button class="btn navy" data-a="rimg-multi" style="width:100%">スクショをまとめて登録</button>
     <p class="fine" style="margin:6px 0 10px">${esc(rtitle())} のスクリーンショットを、${rbase()[0]}BB → ${rbase()[rbase().length-1]}BB の順に撮ってまとめて選ぶと、撮った順にスタックへ割り当てます。</p>
     <div class="row"><button class="btn" data-a="rfile">ファイルから取込</button><button class="btn" data-a="rcopy">全データをコピー</button></div><input type="file" id="rfileIn" accept=".json,.txt,application/json,text/plain" hidden>
@@ -1133,7 +1133,7 @@ document.addEventListener('click',async e=>{
     case 'rimp-act':ui.rimp=d.v;document.querySelectorAll('[data-a="rimp-act"]').forEach(b=>b.classList.toggle('on',b.dataset.v===ui.rimp));break;
     case 'rimp-go':{const map=parseRange($('rimpTa').value),n=Object.keys(map).length;if(!n){toast('読み取れるハンドがありません（例：AA,KK,AKs:0.5）');break}applyRange(map,ui.rimp);closeSheet();toast(n+'ハンドを取り込みました');break}
     case 'rfile':$('rfileIn').click();break;
-    case 'rk-load':{const m=($('rkIn').value||'').match(/[A-Za-z0-9_-]{43}/);if(!m){toast('合言葉を貼り付けてください');break}loadPack(m[0]);break}
+    case 'rk-load':{const m=($('rkIn').value||'').match(/[A-Za-z0-9_-]{43}/);if(!m){toast('受け取ったリンクを貼り付けてください');break}loadPack(m[0]);break}
     case 'rk-again':{if(!await ask('読み込み直すと、レンジ表を手で直した箇所は元に戻ります。よろしいですか？','読み込み直す'))break;loadPack(LS.get('assist.rk',''));break}
     case 'rcopy':{let ok=false;try{await navigator.clipboard.writeText(JSON.stringify({v:1,charts:RG}));ok=true}catch(err){}toast(ok?'レンジの全データをコピーしました':'コピーできませんでした');break}
     case 'modal-ok':endModal(true);break;
@@ -1660,7 +1660,7 @@ async function loadPack(key,quiet){
     const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(0,12)},k,buf.slice(12));
     const n=mergeRanges(JSON.parse(new TextDecoder().decode(plain)));if(!(n>0))throw 0;
     LS.set('assist.rk',key);LS.set('assist.rpv',RPV);if(ui.tab==='range')renderRange();toast(`レンジ表 ${n}枚を読み込みました`);return 0;
-  }catch(e){if(!quiet)toast(why===1?'レンジ表を取得できませんでした。通信を確認してください':'合言葉が違うか、読み込めませんでした');return why}
+  }catch(e){if(!quiet)toast(why===1?'レンジ表を取得できませんでした。通信を確認してください':'リンクが違うか、読み込めませんでした');return why}
 }
 // The key can arrive in the address (#rk=…) at load or later (same page, new fragment), or be left by the page head when an
 // update reloads the page before this code runs. It is removed from the address as soon as it is read.
