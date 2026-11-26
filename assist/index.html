@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 16:22";
+window.MTT_BUILD="2026-11-26 16:26";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -284,6 +284,15 @@ nav button.on{background:var(--accent);color:var(--on-accent)}
 .subsw{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);margin-bottom:10px}
 .subsw button{min-height:38px;font-weight:800;font-size:13px;color:var(--muted)}
 .subsw button.on{background:var(--raise2);color:var(--ink)}
+.tgs{display:flex;flex-direction:column;gap:6px}
+.tg{border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+.tg summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px;font-size:12.5px;font-weight:800;color:var(--ink);cursor:pointer;-webkit-user-select:none;user-select:none}
+.tg summary::-webkit-details-marker{display:none}
+.tg summary::after{content:"＋";margin-left:auto;color:var(--muted);font-weight:700;font-size:14px}
+.tg[open] summary::after{content:"−"}
+.tg .n{min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:10.5px;line-height:18px;text-align:center;padding:0 5px}
+.tg .n:empty{display:none}
+.tg .seg{padding:0 10px 10px}
 .rsel.k5{grid-template-columns:repeat(5,1fr)}
 .out3 b.pos,.verdict.pos{color:var(--ok)}.out3 b.neg,.verdict.neg{color:var(--danger)}
 .verdict{margin-top:8px;padding:9px 11px;border-radius:10px;background:var(--raise);font-weight:800;font-size:14px}
@@ -412,7 +421,26 @@ body.editing .toast{bottom:calc(200px + env(safe-area-inset-bottom))}
 'use strict';
 const POS={2:['SB','BB'],3:['BTN','SB','BB'],4:['CO','BTN','SB','BB'],5:['HJ','CO','BTN','SB','BB'],6:['UTG','HJ','CO','BTN','SB','BB'],7:['UTG','LJ','HJ','CO','BTN','SB','BB'],8:['UTG','UTG+1','LJ','HJ','CO','BTN','SB','BB'],9:['UTG','UTG+1','UTG+2','LJ','HJ','CO','BTN','SB','BB'],10:['UTG','UTG+1','UTG+2','MP','LJ','HJ','CO','BTN','SB','BB']};
 const SUIT={s:'♠',h:'♥',d:'♦',c:'♣'},RANKS='AKQJT98765432';
-const TAGS=['タイト','ルース','アグレッシブ','パッシブ','レギュラー','レクリエーショナル','3bet多め','コール多め','ブラフ多め','降りない','リンプ多め','スチール多め','CB多め','ティルト気味'];
+const TAGG=[
+  ['基本タイプ',['タイト','ルース','アグレッシブ','パッシブ','レギュラー','レクリエーショナル','ニット（超タイト）','マニアック','コーリングステーション','ウィークタイト','タイトだが降りない','プリフロップだけ強気','教科書通り','GTO寄り','エクスプロイト寄り','オンライン出身','経験が浅い']],
+  ['オープン・リンプ',['オープン広い','オープン狭い','EPでも広い','スチール多め','リンプ多め','リンプから強い手','コールドコール多め','オープンサイズ大きい','ミニレイズ多用','小さいレイズを乱発','アイソレート多め']],
+  ['3bet・4bet',['3bet多め','3bet少ない','3betはAA・KK級だけ','3betはバリューのみ','3betブラフあり','3betせずフラット','3betへタフ','3betに降りる','3betにコール多め','3betポットで降りない','4bet多め','4betはほぼナッツ','4betに降りる','スクイーズ多め','コールド4betあり']],
+  ['ブラインド',['BBディフェンス広い','BBディフェンス狭い','BBから3bet多め','SBから3bet多め','SBコンプリート多め','スチールに降りやすい','スチールに3betで反撃','ブラインドを守らない']],
+  ['ショート・オールイン',['プッシュ広い','プッシュ狭い','リショブ多め','オールインにコール広い','オールインにコール狭い','1ペアでスタックを入れる','大きすぎるオールインにもコール','ショートで粘る','ショートでも降りる','休憩前に雑なオールイン','ストップ＆ゴーあり']],
+  ['ポストフロップ（攻め）',['CB多め','CB少ない','CBを打ちすぎる','ダブルバレル多め','トリプルバレルあり','1発で諦める','止まらずに打ち続ける','弱いペアでも打つ','ドンク多め','プローブ多め','チェックレイズ多め','チェックレイズ少ない','フロート多め','スロープレイ多め','ポジションで攻める','ターン・リバーのレイズは本物','3発打つ時は本物']],
+  ['ポストフロップ（受け）',['コール多め','降りない','降りやすい','軽い圧力で降りる','CBに降りやすい','フロップでチェックフォールド多い','レイズに降りる','ターンで降りる','リバーで降りる','リバーでコールしすぎ','ヒーローコールあり','トップペアを降りられない','マルチウェイで降りない','弱いペアで2発コール','ショーダウンまで行きたがる','ドローを追う']],
+  ['ブラフ・バリュー',['ブラフ多め','ブラフ少ない','リバーのブラフ多め','リバーのブラフ少ない','イライラした時だけブラフ','ブラフの筋が通らない','薄いバリューを打つ','バリューを取り逃す','ドローはセミブラフ','ドローはコール']],
+  ['ベットサイズ',['小さいベット多用','大きいベット多用','オーバーベットあり','ブロックベット多め','サイズで強さが分かる','強い手は大きい','強い手は小さい','ミニレイズは強い']],
+  ['ICM・大会状況',['バブルで固い','バブルで圧力をかける','ICMを気にしない','ペイジャンプを意識','ビッグスタックで圧力','ビッグスタックに弱い','入賞後に緩む','終盤に固い','Day1終盤に固くなる','再開直後に荒い','休憩後に固い','チップを増やそうと焦る','BB数で考えていない']],
+  ['テンポ・雑さ',['スナップアクション','スナップコール','スナップフォールド','スナップベット','強い時はスナップ','迷う時に長考','時間を使う','プレーが雑','サイズが雑','コールが雑','オールインが雑','待てずに雑になる','行動がパターン化']],
+  ['メンタル・しぐさ',['ティルト気味','負けた後に荒れる','勝った後に緩む','周りの目を気にする','会話が多い','お酒を飲んで楽しんでいる','チップの扱いがぎこちない','疲れが見える']]
+],TAGS=TAGG.flatMap(g=>g[1]);
+// groups open by themselves when they hold a chosen tag; attr is the action attribute of the caller (player record or hand log)
+function tagPicker(sel,attr,custom){
+  const grp=(name,list,first)=>{const n=list.filter(t=>sel.includes(t)).length;return `<details class="tg" ${first||n?'open':''}><summary>${name}<span class="n num">${n||''}</span></summary><div class="seg">${list.map(t=>`<button class="chip ${sel.includes(t)?'on':''}" ${attr}="tag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div></details>`};
+  return `<div class="tgs">${TAGG.map((g,i)=>grp(g[0],g[1],i===0)).join('')}${custom&&custom.length?grp('自分で追加したタグ',custom,false):''}</div>`;
+}
+function tagCount(el){const d=el.closest('details');if(d)d.querySelector('.n').textContent=d.querySelectorAll('.chip.on').length||''}
 const CNT=['オープン','リンプ','コール','3bet','3betに降り','CB','チェックレイズ','SD到達'],PRE=['オープン','リンプ','コール','3bet'];
 const CATS=['プリフロップ','ポストフロップ','サイズ'];
 const RST={obs:['観測','?'],ok:['確定','✓'],no:['否定','✕']},RKN={tell:'テル',leak:'リーク'};
@@ -590,7 +618,7 @@ function playerHTML(){
   <div class="g2"><input id="pName" value="${esc(p.name)}" placeholder="名前・あだ名" autocomplete="off" aria-label="名前"><input id="pLook" value="${esc(p.look)}" placeholder="見た目（赤キャップ等）" autocomplete="off" aria-label="見た目の特徴"></div>
   <div class="lab">ひとことで言うと（卓の一覧に表示）</div><input id="pGist" value="${esc(p.gist)}" placeholder="例：3betに降りない。リバーのブラフは少ない" autocomplete="off" aria-label="要点">
   ${i>0?`<div class="lab">スタック</div>${stackRow(i,'<span>現在</span>')}`:''}
-  <div class="lab">タイプ</div><div class="seg">${all.map(t=>`<button class="chip ${p.tags.includes(t)?'on':''}" data-a="tag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+  <div class="lab">タイプ・傾向タグ（分類をタップで開く）</div>${tagPicker(p.tags,'data-a',S.tags.filter(t=>!TAGS.includes(t)))}
   <div class="qnote" style="margin-top:8px"><input id="newTag" placeholder="タグを自分で追加" autocomplete="off" aria-label="新しいタグ"><button class="btn" data-a="tagadd" style="flex:none">追加</button></div>
   <div class="lab">テル・リーク（観測 → 確定／否定）</div>
   <div class="rsel" style="grid-template-columns:1fr 1fr;margin-top:0">${Object.keys(RKN).map(k=>`<button class="chip ${ui.rk===k?'on':''}" data-a="rk" data-v="${k}">${RKN[k]}</button>`).join('')}</div>
@@ -929,7 +957,7 @@ document.addEventListener('click',async e=>{
     case 'detail':ui.pid=d.pid;ui.hd={cards:['',''],pos:'',line:''};ui.cat='';openSheet('player');break;
     case 'unseat':{const i=seatOf(ui.pid);if(i>0){s.seats[i]={pid:null,stack:null};if(ui.sel===i)ui.sel=null;save()}closeSheet();toast('席を空けました。記録は名簿に残っています');break}
     case 'pdel':{if(!await ask('このプレイヤーの記録をすべて削除しますか？元に戻せません。','削除'))break;const i=seatOf(ui.pid);if(i>0)s.seats[i]={pid:null,stack:null};delete S.players[ui.pid];if(ui.sel===i)ui.sel=null;save();closeSheet();break}
-    case 'tag':{const p=S.players[ui.pid],t=d.t;p.tags=p.tags.includes(t)?p.tags.filter(x=>x!==t):[...p.tags,t];touchP(p);el.classList.toggle('on');break}
+    case 'tag':{const p=S.players[ui.pid],t=d.t;p.tags=p.tags.includes(t)?p.tags.filter(x=>x!==t):[...p.tags,t];touchP(p);el.classList.toggle('on');tagCount(el);break}
     case 'tagadd':{const t=$('newTag').value.trim();if(!t)break;if(!TAGS.includes(t)&&!S.tags.includes(t))S.tags.push(t);const p=S.players[ui.pid];if(!p.tags.includes(t))p.tags.push(t);touchP(p);renderSheet();break}
     case 'cinc':case 'cdec':{const p=curP();if(!p)break;const k=d.k,dv=a==='cinc'?1:-1;if(k==='_seen')p.seen=Math.max(0,(p.seen||0)+dv);else p.cnt[k]=Math.max(0,(p.cnt[k]||0)+dv);touchP(p);refresh();break}
     case 'qadd':{const p=curP(),i=$('qn');if(p&&addNote(p,i.value,''))render();else if(i)i.focus();break}
@@ -1069,7 +1097,7 @@ const EQ=(()=>{
 
 /* ================= hand log (the former MTT LOG, now a tab) ================= */
 const HL=(()=>{
-  const ST=['Preflop','Flop','Turn','River'],RESULT={win:'勝ち',lose:'負け',chop:'チョップ'},HTAGS=['タイト','ルース','アグレッシブ','パッシブ','コール多め','ブラフ多め','3bet多め','降りない'];
+  const ST=['Preflop','Flop','Turn','River'],RESULT={win:'勝ち',lose:'負け',chop:'チョップ'};
   const E=id=>document.getElementById('hl-'+id),clone=x=>JSON.parse(JSON.stringify(x));
   let hands=LS.get('assist.hands',null),imported=0;
   if(!Array.isArray(hands)){const old=LS.get('mtt.hands',[]);hands=Array.isArray(old)?old:[];imported=hands.length} // carry over hands saved in MTT LOG on this site
@@ -1366,7 +1394,7 @@ const HL=(()=>{
     ${pl?`<div class="gist" style="margin:0 0 4px">${esc(pl.gist||pl.tags.join(' ・ ')||'名簿に登録済みの相手です')}</div><button class="mini blue" data-hl="player" data-pid="${pl.id}" style="margin-bottom:6px">この相手の記録を開く</button>`:''}
     <div class="lab">スタック</div>
     <div class="g2"><label class="inl"><input id="hl-sStack" class="num" type="number" inputmode="numeric" min="0" value="${st??''}" placeholder="不明" aria-label="スタック（点数）"><span>点</span></label><label class="inl"><input id="hl-sStackBb" class="num" type="number" inputmode="decimal" min="0" step="any" value="${st!=null&&h.bb?hnb(st):''}" placeholder="不明" aria-label="スタック（BB）"><span>BB</span></label></div>
-    ${isHero?'':`<div class="lab">このハンドで気づいた傾向</div><div class="seg">${HTAGS.map(t=>`<button class="chip ${(pr.tags||[]).includes(t)?'on':''}" data-hl="tag" data-t="${t}">${t}</button>`).join('')}</div>
+    ${isHero?'':`<div class="lab">このハンドで気づいた傾向</div>${tagPicker(pr.tags||[],'data-hl',S.tags.filter(t=>!TAGS.includes(t)))}
     <textarea id="hl-sNote" rows="2" style="margin-top:8px" placeholder="例：リバーのブラフが少ない。3betに降りない。" aria-label="傾向メモ">${esc(pr.note||'')}</textarea>
     <div class="lab">公開されたカード</div><div class="cards"><button data-hl="shown" data-p="${p}">${pc(sd[0])}</button><button data-hl="shown" data-p="${p}">${pc(sd[1])}</button></div>
     <button class="btn ghost" data-hl="sethero" data-p="${p}" style="width:100%;margin-top:16px">この席を Hero にする</button>`}`;
@@ -1449,7 +1477,7 @@ const HL=(()=>{
       case 'setn':{const n=+d.n;if(n===h.n)break;if(!await guardReset())break;const hs=h.stacks[h.hero];h.n=n;if(!P().includes(h.hero))h.hero=P().includes('BTN')?'BTN':'SB';h.stacks={};if(hs!=null)h.stacks[h.hero]=hs;h.profiles={};h.shown={};h.pids={};h.names={};touch();keep();renderS();break}
       case 'sethero':{const p=d.p;if(p===h.hero)break;const a2=h.stacks[h.hero],b2=h.stacks[p];if(!h.actions.length){delete h.stacks[h.hero];delete h.stacks[p];if(a2!=null)h.stacks[p]=a2;if(b2!=null)h.stacks[h.hero]=b2}h.hero=p;touch();if(u.sheet==='seat')closeS();else renderS();break}
       case 'antetype':{if(d.k===h.anteType)break;if(!await guardReset())break;h.anteType=d.k;if(d.k!=='none'&&!h.ante)h.ante=h.bb;touch();keep();renderS();break}
-      case 'tag':{const p=u.seat,pr=h.profiles[p]=h.profiles[p]||{tags:[],note:''};pr.tags=pr.tags.includes(d.t)?pr.tags.filter(t=>t!==d.t):[...pr.tags,d.t];touch();el.classList.toggle('on');break}
+      case 'tag':{const p=u.seat,pr=h.profiles[p]=h.profiles[p]||{tags:[],note:''};pr.tags=pr.tags.includes(d.t)?pr.tags.filter(t=>t!==d.t):[...pr.tags,d.t];touch();el.classList.toggle('on');tagCount(el);break}
     }
   });
   document.addEventListener('input',e=>{
