@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 16:59";
+window.MTT_BUILD="2026-11-26 17:14";
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
     if(!j.v||j.v===window.MTT_BUILD||window.MTT_BUILD.indexOf('__')===0||document.getElementById('updbar'))return;
@@ -480,6 +480,11 @@ nav button{min-height:50px}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 .g2.caps{font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
 @media (max-width:374px){.seat{width:62px}.hl .seat{width:56px}}
+.rsel.k9{grid-template-columns:repeat(9,1fr);gap:4px}
+.rsel.k9 .chip,.rsel.k7 .chip{font-size:12px;padding:0}
+.rnote{margin-top:6px;font-size:12px;font-weight:700;color:var(--ink2);background:var(--soft);border-radius:8px;padding:6px 9px;line-height:1.5}
+.rgrid button.out{background:transparent!important;color:var(--faint);opacity:.55;box-shadow:inset 0 0 0 1px var(--hair)}
+.rleg .outsw{background:transparent;box-shadow:inset 0 0 0 1px var(--seatline)}
 @media (max-height:690px){.pk button{height:38px;font-size:17px}.pk{gap:5px}.pkrow{padding:4px}}
 @media (max-width:359px){.seat{width:56px}}
 @media (min-width:520px){.table{height:370px}.felt{inset:30px 60px 34px}}
@@ -549,7 +554,7 @@ if(!S||!S.ses||!S.players)S={players:{},ses:newSes(),tags:[]};
 if(!Array.isArray(S.tags))S.tags=[];
 const ui={tab:'table',pv:'table',eq:{cards:['',''],pct:20,txt:''},unit:LS.get('assist.unit','bb'),sel:null,sheet:null,pid:null,seat:null,pk:null,hd:{cards:['',''],pos:'',line:''},cat:'',spot:{v:null,A:null,D:null,I:0,B:null,K:'pko'},q:'',rk:'tell',rg:LS.get('assist.rgsel',{kind:'open',pos:'UTG',vs:'BB',bb:30}),redit:false,brush:{a:'r',p:100},rhand:null,rimp:'r'};
 /* ---------- ranges (kept only in this browser) ---------- */
-const RPOS=['UTG','LJ','HJ','CO','BTN','SB'],RORD=[...RPOS,'BB'],RBB=[10,15,20,30,40,50,60,80];
+const RPOS=['UTG','LJ','HJ','CO','BTN','SB'],RORD=['UTG','UTG+1','LJ','HJ','CO','BTN','SB','BB'],RBB=[10,15,20,30,40,50,60,80,100];
 const RCOL={r:'#e4573d',a:'#8e1b2e',c:'#2f9e6b',f:'var(--fold)'};
 const RLAB={open:{r:'オープン',a:'オールイン',c:'リンプ',f:'フォールド'},bb:{r:'3bet',a:'オールイン',c:'コール',f:'フォールド'},v3:{r:'4bet',a:'オールイン',c:'コール',f:'フォールド'}};
 let RG=LS.get('assist.ranges',{});if(!RG||typeof RG!=='object')RG={};
@@ -948,40 +953,40 @@ function rkey(g=ui.rg){return g.kind==='v3'?`v3|${g.pos}|${g.vs}|${g.bb}`:`${g.k
 function rfix(){const g=ui.rg;if(!RPOS.includes(g.pos))g.pos='UTG';if(!RBB.includes(g.bb))g.bb=30;if(g.kind==='v3'){const after=RORD.slice(RORD.indexOf(g.pos)+1);if(!after.includes(g.vs))g.vs=after[after.length-1]}}
 function rtitle(g=ui.rg){return g.kind==='open'?`${g.pos} のオープン`:g.kind==='bb'?`BB のディフェンス（${g.pos} のオープンに対して）`:`${g.pos} オープン → ${g.vs} の3betへの対応`}
 function cellBg(r,a,c){let x=0;const seg=[];for(const [v,col] of [[r,RCOL.r],[a,RCOL.a],[c,RCOL.c],[100-r-a-c,RCOL.f]])if(v>0){seg.push(`${col} ${x}% ${x+v}%`);x+=v}return `linear-gradient(90deg,${seg.join(',')})`}
-function rsummary(ch){const t={r:0,a:0,c:0};if(ch)for(let i=0;i<169;i++){const w=combos(i);t.r+=ch.d[i*3]*w;t.a+=ch.d[i*3+1]*w;t.c+=ch.d[i*3+2]*w}for(const k in t)t[k]=t[k]/1326;t.f=100-t.r-t.a-t.c;return t}
+function rsummary(ch){const t={r:0,a:0,c:0};if(ch&&ch.s){for(const k in t)t[k]=+ch.s[k]||0;t.f=Math.max(0,100-t.r-t.a-t.c);return t}if(ch)for(let i=0;i<169;i++){const w=combos(i);t.r+=ch.d[i*3]*w;t.a+=ch.d[i*3+1]*w;t.c+=ch.d[i*3+2]*w}for(const k in t)t[k]=t[k]/1326;t.f=100-t.r-t.a-t.c;return t}
 function rcount(){return new Set([...Object.keys(RG),...IMG]).size}
 function renderRange(){
   rfix();const g=ui.rg,k=rkey(),ch=RG[k],L=RLAB[g.kind],sum=rsummary(ch),after=RORD.slice(RORD.indexOf(g.pos)+1);
   const hasImg=IMG.has(k),showGrid=!!ch||ui.redit,has=key=>!!RG[key]||IMG.has(key),kOf=o=>rkey({...g,...o});
-  let grid='';
-  for(let i=0;i<169;i++){const r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0;grid+=`<button data-a="rcell" data-h="${i}" class="${r+a+c>=50?'on':''} ${ui.rhand===i?'cur':''}" style="background:${cellBg(r,a,c)}">${handName(i)}</button>`}
+  let grid='';const op=g.kind==='v3'&&ch?RG['open|'+g.pos+'|'+g.bb]:null,out=i=>!!op&&op.d[i*3]===0;
+  for(let i=0;i<169;i++){const r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0;grid+=`<button data-a="rcell" data-h="${i}" class="${r+a+c>=50?'on':''} ${ui.rhand===i?'cur':''} ${out(i)&&!(r+a+c)?'out':''}" style="background:${cellBg(r,a,c)}">${handName(i)}</button>`}
   let det='ハンドをタップすると、頻度を表示します。';
-  if(ui.rhand!=null){const i=ui.rhand,r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0,parts=[];if(r)parts.push(`${L.r} ${r}%`);if(a)parts.push(`${L.a} ${a}%`);if(c)parts.push(`${L.c} ${c}%`);if(100-r-a-c>0)parts.push(`${L.f} ${100-r-a-c}%`);det=`<b>${handName(i)}</b>　${parts.join(' ／ ')}`}
+  if(ui.rhand!=null){const i=ui.rhand,r=ch?ch.d[i*3]:0,a=ch?ch.d[i*3+1]:0,c=ch?ch.d[i*3+2]:0,parts=[];if(r)parts.push(`${L.r} ${r}%`);if(a)parts.push(`${L.a} ${a}%`);if(c)parts.push(`${L.c} ${c}%`);if(100-r-a-c>0)parts.push(`${L.f} ${100-r-a-c}%`);det=`<b>${handName(i)}</b>　${out(i)&&!(r+a+c)?'オープンしないハンド':parts.join(' ／ ')}${ch&&ch.z&&ch.z[i]?`<br><span style="font-weight:600;color:var(--muted)">${L.r}のサイズ別：${esc(ch.z[i])}</span>`:''}`}
   $('vRange').innerHTML=`<section class="card">
     <div class="rsel k3">${[['open','オープン'],['bb','BBディフェンス'],['v3','対3bet']].map(([v,l])=>`<button class="chip ${g.kind===v?'on':''}" data-a="rkind" data-v="${v}">${l}</button>`).join('')}</div>
     <div class="rlab">${g.kind==='bb'?'オープンした相手のポジション':g.kind==='v3'?'自分（オープン）のポジション':'ポジション'}</div>
     <div class="rsel k6">${RPOS.map(p=>`<button class="chip ${g.pos===p?'on':''}" data-a="rpos" data-v="${p}">${p}</button>`).join('')}</div>
-    ${g.kind==='v3'?`<div class="rlab">3betしてきた相手のポジション</div><div class="rsel k6">${RORD.slice(1).map(p=>`<button class="chip ${g.vs===p?'on':''}" data-a="rvs" data-v="${p}" ${after.includes(p)?'':'disabled'}>${p}</button>`).join('')}</div>`:''}
+    ${g.kind==='v3'?`<div class="rlab">3betしてきた相手のポジション</div><div class="rsel k7">${RORD.slice(1).map(p=>`<button class="chip ${g.vs===p?'on':''}" data-a="rvs" data-v="${p}" ${after.includes(p)?'':'disabled'}>${p}</button>`).join('')}</div>`:''}
     <div class="rlab">スタック（BB）</div>
-    <div class="rsel k8">${RBB.map(b=>`<button class="chip num ${g.bb===b?'on':''}" data-a="rbb" data-v="${b}" style="${g.bb!==b&&has(kOf({bb:b}))?'border-color:var(--ink);border-width:2px':''}">${b}</button>`).join('')}</div>
+    <div class="rsel k9">${RBB.map(b=>`<button class="chip num ${g.bb===b?'on':''}" data-a="rbb" data-v="${b}" style="${g.bb!==b&&has(kOf({bb:b}))?'border-color:var(--ink);border-width:2px':''}">${b}</button>`).join('')}</div>
   </section>
   <section class="card">
-    <div class="bar"><div class="rtitle" style="flex:1">${rtitle()} ・ ${g.bb}BB</div>${showGrid||hasImg?`<button class="mini ${ui.redit?'navy':'blue'}" data-a="redit">${ui.redit?'編集を終える':ch?'編集':'手入力'}</button>`:''}</div>
+    <div class="bar"><div class="rtitle" style="flex:1">${rtitle()} ・ ${g.bb}BB</div>${showGrid||hasImg?`<button class="mini ${ui.redit?'navy':'blue'}" data-a="redit">${ui.redit?'編集を終える':ch?'編集':'手入力'}</button>`:''}</div>${ch&&ch.n?`<div class="rnote">${esc(ch.n)}</div>`:''}
     ${hasImg?`<button class="rimg" data-a="rzoom" aria-label="スクリーンショットを拡大"><img id="rimgEl" alt="${esc(rtitle())} ${g.bb}BB のスクリーンショット" src="${IMGURL[k]||''}"></button>
       <div class="row" style="margin-top:8px"><button class="btn" data-a="rimg-pick">画像を差し替え</button><button class="btn dangerous" data-a="rimg-del" style="flex:0 0 auto">画像を削除</button></div>`:''}
-    ${!hasImg&&!showGrid?`<div class="hint" style="margin-top:6px">このチャートはまだ登録されていません。GTO Wizardで撮ったスクリーンショットを登録すると、ここに表示されます。</div>
+    ${!hasImg&&!showGrid?`<div class="hint" style="margin-top:6px">このチャートはまだ登録されていません。下の「ファイルから取込」でレンジのデータを読み込むか、スクリーンショットを登録すると、ここに表示されます。</div>
       <button class="btn pri" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button><button class="btn ghost" data-a="redit" style="width:100%;margin-top:8px">手入力でグリッドを作る</button>`:''}
     ${showGrid?`<div class="rgrid">${grid}</div>
-    <div class="rleg num">${['r','a','c','f'].map(x=>`<span><i style="background:${RCOL[x]}"></i>${L[x]} ${ch?sum[x].toFixed(1)+'%':'—'}</span>`).join('')}</div>
+    <div class="rleg num">${['r','a','c','f'].map(x=>`<span><i style="background:${RCOL[x]}"></i>${L[x]} ${ch?sum[x].toFixed(1)+'%':'—'}</span>`).join('')}${op?'<span><i class="outsw"></i>オープンしない</span>':''}</div>${g.kind==='v3'&&ch&&ch.s?'<p class="fine" style="margin-top:4px">割合は、オープンしたレンジ全体に対するものです。</p>':''}
     ${ui.redit?`<div class="rlab">塗るアクション</div><div class="rsel" style="grid-template-columns:repeat(4,1fr)">${['r','a','c','f'].map(x=>`<button class="chip ${ui.brush.a===x?'on':''}" data-a="rbrush" data-v="${x}">${L[x]}</button>`).join('')}</div>
       <div class="rlab">頻度</div><div class="rsel" style="grid-template-columns:repeat(4,1fr)">${[100,75,50,25].map(p=>`<button class="chip num ${ui.brush.p===p?'on':''}" data-a="rpct" data-v="${p}" ${ui.brush.a==='f'?'disabled':''}>${p}%</button>`).join('')}</div>
       <div class="row" style="margin-top:10px"><button class="btn" data-a="rimp-open">貼り付けて取り込む</button>${ch?'<button class="btn dangerous" data-a="rclear" style="flex:0 0 auto">消去</button>':''}</div>
       <p class="fine">ハンドをタップすると、選んだアクションと頻度で塗ります。</p>`:`<div class="rdet num">${det}</div>`}
     ${hasImg?'':'<button class="btn" data-a="rimg-pick" style="width:100%;margin-top:10px">スクリーンショットを登録</button>'}`:''}
   </section>
-  <section class="card"><h2>レンジデータ<span>登録済み ${rcount()} / ${RPOS.length*RBB.length*2+RBB.length*21} 枚</span></h2>
+  <section class="card"><h2>レンジデータ<span>登録済み ${rcount()} 枚</span></h2>
     <button class="btn navy" data-a="rimg-multi" style="width:100%">スクショをまとめて登録</button>
-    <p class="fine" style="margin:6px 0 10px">${esc(rtitle())} のスクリーンショットを、10BB → 80BB の順に撮ってまとめて選ぶと、撮った順にスタックへ割り当てます。</p>
+    <p class="fine" style="margin:6px 0 10px">${esc(rtitle())} のスクリーンショットを、10BB → 100BB の順に撮ってまとめて選ぶと、撮った順にスタックへ割り当てます。</p>
     <div class="row"><button class="btn" data-a="rfile">ファイルから取込</button><button class="btn" data-a="rcopy">全データをコピー</button></div><input type="file" id="rfileIn" accept=".json,.txt,application/json,text/plain" hidden>
     <p class="fine">スクリーンショットとレンジは、この端末のブラウザの中だけに保存され、公開サイトには含まれません。太枠のスタックは登録済みです。</p></section>`;
   if(hasImg&&!IMGURL[k])imgUrl(k).then(u=>{const el=$('rimgEl');if(el&&u&&rkey()===k)el.src=u}).catch(()=>{});
@@ -990,7 +995,7 @@ function paint(idx){
   const k=rkey(),ch=RG[k]||(RG[k]={d:new Array(507).fill(0)}),b=ui.brush,o=idx*3,cur={r:ch.d[o],a:ch.d[o+1],c:ch.d[o+2]};
   if(b.a==='f')cur.r=cur.a=cur.c=0;
   else{cur[b.a]=b.p;const ot=['r','a','c'].filter(x=>x!==b.a),sm=cur[ot[0]]+cur[ot[1]],room=100-b.p;if(sm>room){const sc=sm?room/sm:0;cur[ot[0]]=Math.round(cur[ot[0]]*sc);cur[ot[1]]=room-cur[ot[0]]<cur[ot[1]]*sc?room-cur[ot[0]]:Math.round(cur[ot[1]]*sc)}}
-  ch.d[o]=cur.r;ch.d[o+1]=cur.a;ch.d[o+2]=cur.c;ch.t=Date.now();saveRG();
+  ch.d[o]=cur.r;ch.d[o+1]=cur.a;ch.d[o+2]=cur.c;ch.t=Date.now();delete ch.s;if(ch.z)delete ch.z[idx];saveRG();
 }
 function parseRange(text){ // "AA,KK,AKs:0.5,A5s+,TT+" -> {handIndex: percent}
   const out={},R=RANKS;
@@ -1012,12 +1017,34 @@ function parseRange(text){ // "AA,KK,AKs:0.5,A5s+,TT+" -> {handIndex: percent}
 function applyRange(map,act){
   const k=rkey(),ch=RG[k]||(RG[k]={d:new Array(507).fill(0)}),ai={r:0,a:1,c:2}[act];let n=0;
   for(const [idx,pct] of Object.entries(map)){const o=idx*3;ch.d[o+ai]=pct;const ot=[0,1,2].filter(x=>x!==ai),sm=ch.d[o+ot[0]]+ch.d[o+ot[1]],room=100-pct;if(sm>room){const sc=sm?room/sm:0;ch.d[o+ot[0]]=Math.round(ch.d[o+ot[0]]*sc);ch.d[o+ot[1]]=Math.min(room-ch.d[o+ot[0]],Math.round(ch.d[o+ot[1]]*sc))}n++}
-  ch.t=Date.now();saveRG();return n;
+  ch.t=Date.now();delete ch.s;delete ch.z;saveRG();return n;
+}
+// One solver node -> one chart. Node names: "UTG_40" (open), "BBv UTG_40" (BB defence), "D3 UTG-BTN_40" (opener facing a 3-bet).
+// Hands carry R / R2 / R3 (raise sizes), A (all-in), C (call or limp) in percent; the sizes are added up for the grid and kept as text.
+function nodeChart(name,node){
+  const m=String(name).match(/^(BBv |D3 )?([A-Z]+\+?\d?)(?:-([A-Z]+\+?\d?))?_(\d+)$/);if(!m||!node||typeof node.h!=='object')return null;
+  const fix=p=>p==='UTG1'?'UTG+1':p,dep=+m[4]===14?15:+m[4],kind=m[1]==='BBv '?'bb':m[1]==='D3 '?'v3':'open';
+  if(kind==='v3'&&!m[3])return null;
+  const key=kind==='v3'?`v3|${fix(m[2])}|${fix(m[3])}|${dep}`:`${kind}|${fix(m[2])}|${dep}`,d=new Array(507).fill(0),z={},num=x=>Math.max(0,+x||0);
+  for(const [hand,a] of Object.entries(node.h)){
+    const hm=String(hand).match(/^([AKQJT2-9])([AKQJT2-9])([so])?$/);if(!hm||!a)continue;let i=RANKS.indexOf(hm[1]),j=RANKS.indexOf(hm[2]);if(i>j)[i,j]=[j,i];
+    const idx=i===j?i*14:hm[3]==='s'?i*13+j:j*13+i,rs=['R','R2','R3'].filter(k=>num(a[k])>0);let r=Math.round(rs.reduce((t,k)=>t+num(a[k]),0)),al=Math.round(num(a.A)),c=Math.round(num(a.C));
+    const over=r+al+c-100;if(over>0){if(r>=al&&r>=c)r-=over;else if(c>=al)c-=over;else al-=over}
+    d[idx*3]=r;d[idx*3+1]=al;d[idx*3+2]=c;if(rs.length>1||(rs.length===1&&rs[0]!=='R'))z[idx]=rs.map(k=>`${k==='R'?'1つ目':k==='R2'?'2つ目':'3つ目'} ${Math.round(num(a[k]))}%`).join(' / ');
+  }
+  const ch={d,t:Date.now()};if(Object.keys(z).length)ch.z=z;
+  const f=node.freq;if(f&&typeof f==='object'){const tot=Object.values(f).reduce((t,x)=>t+num(x),0);if(tot>0)ch.s={r:(num(f.R)+num(f.R2)+num(f.R3))/tot*100,a:num(f.A)/tot*100,c:num(f.C)/tot*100}}
+  if(+m[4]===14)ch.n='14BBの解です（15BBの解が無いため代用）';
+  return [key,ch];
 }
 function mergeRanges(j){
-  const src=j&&j.charts&&typeof j.charts==='object'?j.charts:null;if(!src)return -1;let n=0;
-  for(const [k,v] of Object.entries(src)){const d=Array.isArray(v)?v:v&&v.d;if(!Array.isArray(d)||d.length!==507||!/^(open|bb|v3)\|/.test(k))continue;RG[k]={d:d.map(x=>Math.max(0,Math.min(100,Math.round(+x||0)))),t:Date.now()};n++}
-  if(n)saveRG();return n;
+  if(!j||typeof j!=='object')return -1;let n=0;
+  if(j.charts&&typeof j.charts==='object'){
+    for(const [k,v] of Object.entries(j.charts)){const d=Array.isArray(v)?v:v&&v.d;if(!Array.isArray(d)||d.length!==507||!/^(open|bb|v3)\|/.test(k))continue;
+      const ch={d:d.map(x=>Math.max(0,Math.min(100,Math.round(+x||0)))),t:Date.now()};if(v&&!Array.isArray(v)){if(v.s&&typeof v.s==='object')ch.s={r:+v.s.r||0,a:+v.s.a||0,c:+v.s.c||0};if(typeof v.n==='string')ch.n=v.n.slice(0,200);if(v.z&&typeof v.z==='object'){ch.z={};for(const [i,t] of Object.entries(v.z))if(+i>=0&&+i<169)ch.z[+i]=String(t).slice(0,80)}}
+      RG[k]=ch;n++}
+  }else for(const [name,node] of Object.entries(j)){const r=nodeChart(name,node);if(r){RG[r[0]]=r[1];n++}}
+  if(n)saveRG();return n||-1;
 }
 
 /* ---------- helpers ---------- */
