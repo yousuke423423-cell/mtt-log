@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 18:25";
+window.MTT_BUILD="2026-11-26 18:41";
 try{var rkm=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);if(rkm)localStorage.setItem("assist.rkPending",rkm[1])}catch(e){}
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
@@ -526,6 +526,28 @@ nav button{font-size:13px;padding:0 2px}
 .status b{font-size:15.5px}
 .status div div{padding-left:7px}
 .msave{position:sticky;bottom:0;background:var(--surface);padding:10px 0 2px;margin-top:6px}
+/* scribble and burn: the paper is a physical thing, so it keeps its own colours in both themes; the fire is the one loud moment */
+.paper{background:#f7f3ea;color:#1b1b1b;border:1px solid #d9d2c3;border-radius:6px;font-size:18px;line-height:1.6;font-weight:600;box-shadow:0 2px 8px #00000022}
+textarea.paper{min-height:270px;padding:14px}
+textarea.paper::placeholder{color:#8f887a}
+.paper.pad{padding:0;overflow:hidden}
+.paper.pad canvas{display:block;width:100%;height:300px;touch-action:none}
+.burnbtn{width:100%;min-height:64px;border-radius:14px;background:#c2360f;color:#fff;font-size:21px;font-weight:800;letter-spacing:.3em;text-indent:.3em;box-shadow:0 6px 18px #c2360f55}
+.burnbtn:disabled{background:var(--raise2);color:var(--muted);box-shadow:none}
+.burnbtn:active:not(:disabled){transform:scale(.98)}
+.bstage{position:relative;height:min(62vh,460px);border-radius:14px;background:#0a0a0b;overflow:hidden}
+.bstage .burnp{position:absolute;left:9%;right:9%;top:7%;bottom:15%;padding:14px;overflow:hidden;--b:0;
+  -webkit-mask-image:linear-gradient(to top,transparent calc(var(--b)*100% - 2%),#000 calc(var(--b)*100% + 5%));mask-image:linear-gradient(to top,transparent calc(var(--b)*100% - 2%),#000 calc(var(--b)*100% + 5%))}
+.bstage .burnp::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,#000 calc(var(--b)*100%),#2a1204e6 calc(var(--b)*100% + 7%),#5a2a0a80 calc(var(--b)*100% + 16%),transparent calc(var(--b)*100% + 30%))}
+.bstage .ptx{white-space:pre-wrap;overflow-wrap:anywhere}
+.bstage .burnp img{display:block;width:100%;height:100%;object-fit:contain;object-position:top left}
+.bstage canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none}
+.bstage .ash{position:absolute;background:#6f6f73;border-radius:1px;opacity:0;animation:ashfall 2.4s ease-in forwards}
+@keyframes ashfall{0%{opacity:.9;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(160px) rotate(140deg)}}
+.bdone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#f4f4f5;text-align:center;padding:20px;animation:bdone 1.2s ease-out}
+.bdone b{font-size:24px;font-weight:800;letter-spacing:.12em}
+.bdone span{font-size:13px;color:#b5b6bc;font-weight:600}
+@keyframes bdone{from{opacity:0}}
 @media (max-height:690px){.pk button{height:38px;font-size:17px}.pk{gap:5px}.pkrow{padding:4px}}
 @media (max-width:359px){.seat{width:56px}}
 @media (min-width:520px){.table{height:370px}.felt{inset:30px 60px 34px}}
@@ -1710,7 +1732,7 @@ const MT=(()=>{
   // the current session: newest entries without a gap of five hours, and not older than twelve
   function today(){const L=M().log;if(!L.length||Date.now()-L[0].t>12*3600e3)return [];const out=[L[0]];for(let i=1;i<L.length;i++){if(out[out.length-1].t-L[i].t>5*3600e3)break;out.push(L[i])}return out}
   const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'今':m<60?m+'分前':Math.floor(m/60)+'時間前'};
-  const u={sheet:null,ck:null,id:null,cd:null};let bt=[];
+  const u={sheet:null,ck:null,id:null,cd:null,bn:null};let bt=[],raf=0;
   function chip(){
     const el=$('mst');if(!el)return;const l=today()[0];
     el.className='mst '+(l?l.g:'');el.innerHTML=l?`<small>${ago(l.t)}</small><b>状態 ${l.g}</b>`:`<small>メンタル</small><b>記録</b>`;
@@ -1730,6 +1752,7 @@ const MT=(()=>{
   function render(){
     const m=M(),T=today(),l=T[0],bad=T.filter(e=>e.g!=='A');
     $('vMental').innerHTML=`<section class="card"><button class="btn pri two" data-m="check" style="width:100%;min-height:60px">今の状態を記録する<small>10秒 ・ タップだけ</small></button>
+      <button class="btn two" data-m="burn" style="width:100%;min-height:56px;margin-top:8px">殴り書きして燃やす<small>書いた内容は残りません${M().burns?' ・ これまで '+M().burns+'回':''}</small></button>
       <div class="mnow">${l?`直近：${gb(l.g)} ${l.ty?TYN[l.ty]+' ・ 強さ'+l.iv+' ・ ':''}${ago(l.t)}`:'崩れたときだけでなく、良い状態のときも記録すると、差が見えてきます。'}</div></section>
     <section class="card"><h2>今日の重点<span>プレー中に意識する1〜2個</span></h2><textarea id="mt-focus" rows="2" placeholder="例：BBディフェンスを広げすぎない。リバーは時間を使う">${esc(m.cfg.focus)}</textarea>
       <details class="why"><summary>プレー前の準備（1分）</summary><ul class="mlist"><li>眠気・空腹・水分を確かめる。足りなければ先に整える。</li><li>Aゲームの自分：${esc(m.cfg.a||GDEF.A)}</li><li>Cゲームの自分：${esc(m.cfg.c||GDEF.C)}</li><li>崩れたときに守ること：${esc(floor().join('／'))}</li>${m.cfg.signs?`<li>自分の初期サイン：${esc(m.cfg.signs)}</li>`:''}</ul></details></section>
@@ -1742,8 +1765,9 @@ const MT=(()=>{
   /* ----- sheets ----- */
   const sh=t=>`<div class="grab"></div><div class="shead"><h3>${t}</h3><button class="x" data-m="close">閉じる</button></div>`;
   function openS(n){u.sheet=n;E('scrim').hidden=false;renderS();E('sheet').scrollTop=0}
-  function closeS(){stopBreath();u.sheet=null;E('scrim').hidden=true;chip();if(ui.tab==='mental')render()}
-  function renderS(){const el=E('sheet');el.innerHTML=u.sheet==='check'?checkHTML():u.sheet==='reset'?resetHTML():u.sheet==='cfg'?cfgHTML():u.sheet==='cool'?coolHTML():''}
+  function closeS(){stopBreath();cancelAnimationFrame(raf);u.bn=null;u.sheet=null;E('scrim').hidden=true;chip();if(ui.tab==='mental')render()}
+  function renderS(){const el=E('sheet');el.innerHTML=u.sheet==='check'?checkHTML():u.sheet==='reset'?resetHTML():u.sheet==='cfg'?cfgHTML():u.sheet==='cool'?coolHTML():u.sheet==='burn'?burnHTML():''
+    if(u.sheet==='burn'&&u.bn.mode==='draw')padInit()}
   function checkHTML(){
     const c=u.ck,m=M().cfg;
     return sh('今の状態')+`<div class="lab">プレーの質</div>
@@ -1764,7 +1788,8 @@ const MT=(()=>{
     <div class="breath"><div class="brc" id="mt-br"></div><div class="brt" id="mt-brt">鼻から吸い、もう一度短く吸い足して、口から長く吐きます。3回。</div></div>
     <button class="btn" data-m="breath" style="width:100%">呼吸を始める</button>
     ${e.ty?`<div class="lab">上の言葉は効きましたか（あとで答えても構いません）</div><div class="rsel k3">${[2,1,0].map(v=>`<button class="chip ${e.eff===v?'on':''}" data-m="eff" data-v="${v}">${EFF[v][1]} ${EFF[v][0]}</button>`).join('')}</div>`:''}
-    <button class="btn pri" data-m="close" style="width:100%;margin-top:16px;min-height:52px">プレーに戻る</button>
+    <button class="btn" data-m="burn" style="width:100%;margin-top:16px">まだ収まらない → 殴り書きして燃やす</button>
+    <button class="btn pri" data-m="close" style="width:100%;margin-top:8px;min-height:52px">プレーに戻る</button>
     <button class="btn ghost" data-m="del" style="width:100%;margin-top:8px">この記録を削除</button>`;
   }
   function cfgHTML(){
@@ -1797,12 +1822,60 @@ const MT=(()=>{
     for(let c=0;c<3;c++)for(const [cls,label,ms] of seq){bt.push(setTimeout(()=>{const b=E('br');if(!b)return;b.className='brc '+cls;E('brt').textContent=`${label}（${c+1}/3）`},t));t+=ms}
     bt.push(setTimeout(()=>{const b=E('br');if(b){b.className='brc';E('brt').textContent='終わりました。次の1ハンドの判断に集中します。'}},t));
   }
+  /* ----- scribble and burn: nothing written here is ever stored; only the number of burns is counted ----- */
+  function burnHTML(){
+    const b=u.bn,has=b.mode==='type'?!!b.text.trim():b.ink;
+    return sh('殴り書き')+`<p class="fine" style="margin:0 0 8px">思っていることを、そのまま書きます。きれいに書く必要はありません。書いた内容はどこにも保存されず、燃やすと消えます。</p>
+    <div class="rsel" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><button class="chip ${b.mode==='type'?'on':''}" data-m="bnmode" data-v="type">文字を打つ</button><button class="chip ${b.mode==='draw'?'on':''}" data-m="bnmode" data-v="draw">指で書く</button></div>
+    ${b.mode==='type'?`<textarea class="paper" id="mt-bntx" rows="9" placeholder="ここに書く" autocapitalize="off" spellcheck="false" aria-label="殴り書き">${esc(b.text)}</textarea>`:`<div class="paper pad"><canvas id="mt-pad" aria-label="指で書く紙"></canvas></div><button class="mini" data-m="bnclear" style="margin-top:6px">書き直す</button>`}
+    <div class="msave"><button class="burnbtn" data-m="ignite" ${has?'':'disabled'}>完全燃焼</button></div>`;
+  }
+  let pad=null;
+  function padInit(){
+    const c=E('pad');if(!c)return;const r=c.parentElement.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);c.width=Math.round(r.width*dpr);c.height=Math.round(300*dpr);c.style.height='300px';
+    const x=c.getContext('2d');x.scale(dpr,dpr);x.lineWidth=3.2;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#1b1b1b';pad={c,x,down:false};
+    if(u.bn.img){const im=new Image();im.onload=()=>x.drawImage(im,0,0,r.width,300);im.src=u.bn.img}
+    const pt=e=>{const q=c.getBoundingClientRect();return [e.clientX-q.left,e.clientY-q.top]};
+    c.onpointerdown=e=>{e.preventDefault();pad.down=true;const [a,b]=pt(e);x.beginPath();x.moveTo(a,b);x.lineTo(a+.1,b+.1);x.stroke();if(!u.bn.ink){u.bn.ink=true;const g=document.querySelector('[data-m="ignite"]');if(g)g.disabled=false}};
+    c.onpointermove=e=>{if(!pad.down)return;e.preventDefault();const [a,b]=pt(e);x.lineTo(a,b);x.stroke()};
+    c.onpointerup=c.onpointercancel=c.onpointerleave=e=>{if(!pad.down)return;pad.down=false;try{c.releasePointerCapture(e.pointerId)}catch(_){}if(u.bn)u.bn.img=c.toDataURL('image/png')};
+  }
+  function ignite(){
+    const b=u.bn,el=E('sheet'),reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const content=b.mode==='type'?`<div class="ptx">${esc(b.text)}</div>`:`<img src="${b.img||''}" alt="">`;
+    b.text='';b.img=null;b.ink=false; // gone from memory as soon as the fire is lit
+    el.innerHTML=sh('完全燃焼')+`<div class="bstage" id="mt-stage"><div class="paper burnp" id="mt-paper">${content}</div><canvas id="mt-fire" width="56" height="84"></canvas><div class="bdone" id="mt-done" hidden><b>燃え尽きました</b><span>書いたものは、もうどこにもありません。</span></div></div>
+    <div id="mt-after" hidden><button class="btn pri" data-m="close" style="width:100%;margin-top:14px;min-height:52px">プレーに戻る</button><button class="btn" data-m="check" style="width:100%;margin-top:8px">今の状態を記録する</button></div>`;
+    el.scrollTop=0;const m=M();m.burns=(m.burns||0)+1;save();
+    const paper=E('paper'),done=()=>{const p=E('paper');if(p)p.remove();const d=E('done'),a=E('after');if(d)d.hidden=false;if(a)a.hidden=false};
+    if(reduce){paper.style.transition='opacity 1.2s';paper.style.opacity='0';setTimeout(done,1300);return}
+    const FW=56,FH=84,fire=new Uint8Array(FW*FH),cv=E('fire'),cx=cv.getContext('2d'),img=cx.createImageData(FW,FH),PAL=[];
+    for(let i=0;i<37;i++){const t=i/36;PAL.push([Math.min(255,Math.round(255*Math.min(1,t*2.3))),Math.round(255*Math.max(0,Math.min(1,(t-.26)*1.7))),Math.round(255*Math.max(0,Math.min(1,(t-.8)*4.5))),i<2?0:Math.min(255,Math.round(70+t*420))])}
+    const t0=performance.now(),ease=x=>x<0?0:x>1?1:x*x*(3-2*x);let ashed=false;
+    const frame=now=>{
+      const cv2=E('fire');if(!cv2)return;const t=(now-t0)/1000;
+      // 0–2.5s smoulder, 2.5–4.5s grows into a blaze, holds, 7.6–9.6s dies down
+      const src=t<2.5?14*ease(t/2.5):t<4.5?14+22*ease((t-2.5)/2):t<7.6?36:36*(1-ease((t-7.6)/2));
+      for(let x=0;x<FW;x++)fire[(FH-1)*FW+x]=Math.max(0,Math.min(36,Math.round(src-(t<2.5?Math.random()*10:Math.random()*3))));
+      for(let x=0;x<FW;x++)for(let y=1;y<FH;y++){const i=y*FW+x,p=fire[i];if(!p)fire[i-FW]=0;else{const r=Math.round(Math.random()*3)&3,d=i-r+1;fire[Math.max(0,d-FW)]=Math.max(0,p-(r&1))}}
+      for(let i=0;i<FW*FH;i++){const c=PAL[fire[i]],o=i*4;img.data[o]=c[0];img.data[o+1]=c[1];img.data[o+2]=c[2];img.data[o+3]=c[3]}
+      cx.putImageData(img,0,0);
+      const p=E('paper');if(p){const bn=t<2.5?.06*ease(t/2.5):.06+1.1*ease((t-2.5)/5);p.style.setProperty('--b',bn.toFixed(3));p.style.filter=`sepia(${Math.min(1,t/5).toFixed(2)}) brightness(${Math.max(.45,1-t/12).toFixed(2)})`;
+        if(bn>=1.1&&!ashed){ashed=true;const st=E('stage');for(let k=0;k<34;k++){const a=document.createElement('i');a.className='ash';a.style.left=(12+Math.random()*76)+'%';a.style.top=(10+Math.random()*60)+'%';a.style.animationDelay=(Math.random()*.9).toFixed(2)+'s';a.style.width=a.style.height=(2+Math.random()*4).toFixed(1)+'px';st.appendChild(a)}p.remove()}}
+      if(t<10.2)raf=requestAnimationFrame(frame);else done();
+    };
+    raf=requestAnimationFrame(frame);
+  }
   function check(){u.ck={g:null,ty:null,iv:3,mark:false,note:''};openS('check')}
   document.addEventListener('click',async e=>{
     if(e.target.id==='mt-scrim')return closeS();
     const el=e.target.closest('[data-m]');if(!el)return;const a=el.dataset.m,d=el.dataset,m=M();
     switch(a){
-      case 'check':check();break;
+      case 'check':cancelAnimationFrame(raf);u.bn=null;check();break;
+      case 'burn':stopBreath();u.bn={mode:'type',text:'',img:null,ink:false};openS('burn');break;
+      case 'bnmode':{const t=E('bntx');if(t)u.bn.text=t.value;u.bn.mode=d.v;renderS();break}
+      case 'bnclear':u.bn.img=null;u.bn.ink=false;renderS();break;
+      case 'ignite':{const t=E('bntx');if(t)u.bn.text=t.value;ignite();break}
       case 'close':closeS();break;
       case 'g':u.ck.g=d.v;u.ck.note=E('note').value;renderS();break;
       case 'ty':u.ck.ty=u.ck.ty===d.v?null:d.v;u.ck.note=E('note').value;renderS();break;
@@ -1826,6 +1899,7 @@ const MT=(()=>{
   });
   document.addEventListener('input',e=>{
     const t=e.target,m=M();
+    if(t.id==='mt-bntx'){if(u.bn)u.bn.text=t.value;const g=document.querySelector('[data-m="ignite"]');if(g)g.disabled=!t.value.trim();return}
     if(t.id==='mt-focus'){m.cfg.focus=t.value;save()}
     else if(t.dataset.mc){m.cfg[t.dataset.mc]=t.value;save()}
     else if(t.dataset.ms){const v=t.value.trim();if(v)m.cfg.says[t.dataset.ms]=t.value;else delete m.cfg.says[t.dataset.ms];save()}
