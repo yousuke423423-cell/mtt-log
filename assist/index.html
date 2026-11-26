@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 17:48";
+window.MTT_BUILD="2026-11-26 18:25";
 try{var rkm=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);if(rkm)localStorage.setItem("assist.rkPending",rkm[1])}catch(e){}
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
@@ -486,6 +486,46 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .rnote{margin-top:6px;font-size:12px;font-weight:700;color:var(--ink2);background:var(--soft);border-radius:8px;padding:6px 9px;line-height:1.5}
 .rgrid button.out{background:transparent!important;color:var(--faint);opacity:.55;box-shadow:inset 0 0 0 1px var(--hair)}
 .rleg .outsw{background:transparent;box-shadow:inset 0 0 0 1px var(--seatline)}
+/* mental game */
+nav .in{grid-template-columns:repeat(5,1fr);gap:4px}
+nav button{font-size:13px;padding:0 2px}
+.status .stw{max-width:560px;margin:0 auto;display:flex;gap:8px;align-items:stretch}
+.status .stw .in{flex:1;min-width:0;max-width:none;margin:0}
+.mst{flex:none;min-width:64px;min-height:40px;border-radius:10px;border:1px solid var(--seatline);padding:2px 8px;text-align:center;line-height:1.2;background:var(--surface)}
+.mst small{display:block;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+.mst b{display:block;font-size:14px;font-weight:800;white-space:nowrap}
+.mst.B{border-color:var(--warn)}.mst.B b{color:var(--warn)}.mst.C{border-color:var(--danger)}.mst.C b{color:var(--danger)}
+.gb{flex:none;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;font-size:13px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.gb.B{background:var(--warn-bg);color:var(--warn)}.gb.C{background:var(--danger-bg);color:var(--danger)}
+.mnow{margin-top:10px;font-size:13px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.5}
+.mg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mg button{min-height:92px;border-radius:12px;border:1px solid var(--line);background:var(--raise);padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.mg button b{font-size:26px;font-weight:800;line-height:1}
+.mg button small{font-size:11px;font-weight:600;color:var(--muted);line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.mg button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mg button.on small{color:var(--on-accent);opacity:.75}
+.say{padding:14px 14px;border-radius:4px 12px 12px 4px;background:var(--soft);border-left:4px solid var(--ink);font-size:17px;font-weight:800;line-height:1.6}
+.mlist{margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--ink2)}
+.mlist.strong{font-size:15px;font-weight:700;color:var(--ink)}
+.breath{display:flex;align-items:center;gap:16px;padding:10px 6px 12px}
+.brc{flex:none;width:64px;height:64px;border-radius:50%;border:3px solid var(--ink);background:var(--soft);transform:scale(.8);transition:transform 1s ease-in-out}
+.brc.in{transform:scale(1.05);transition-duration:2s}.brc.in2{transform:scale(1.25);transition-duration:1s}.brc.out{transform:scale(.8);transition-duration:6s}
+.brt{font-size:14px;font-weight:700;line-height:1.5}
+@media (prefers-reduced-motion:reduce){.brc{transition:none}}
+.mfield{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-top:10px}
+.mfield textarea{margin-top:4px;font-weight:400}
+.gshare{display:flex;height:30px;border-radius:9px;overflow:hidden;font-size:12px;font-weight:800;margin-bottom:10px;background:var(--raise)}
+.gshare div{display:grid;place-items:center;white-space:nowrap;overflow:hidden;background:var(--ok-bg);color:var(--ok)}
+.gshare .B{background:var(--warn-bg);color:var(--warn)}.gshare .C{background:var(--danger-bg);color:var(--danger)}
+.mbar{margin-top:10px}
+.mbar .t{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700}
+.mbar .t span:last-child{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.mbar .bg{height:8px;border-radius:4px;background:var(--raise2);margin-top:4px;overflow:hidden}
+.mbar .bg i{display:block;height:100%;background:var(--ink);border-radius:4px}
+.mbar .warn{margin-top:4px;font-size:12px;font-weight:700;color:var(--danger)}
+.status b{font-size:15.5px}
+.status div div{padding-left:7px}
+.msave{position:sticky;bottom:0;background:var(--surface);padding:10px 0 2px;margin-top:6px}
 @media (max-height:690px){.pk button{height:38px;font-size:17px}.pk{gap:5px}.pkrow{padding:4px}}
 @media (max-width:359px){.seat{width:56px}}
 @media (min-width:520px){.table{height:370px}.felt{inset:30px 60px 34px}}
@@ -497,17 +537,19 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   <button class="seschip" data-a="ses" id="seschip" aria-label="大会の設定を開く"></button>
   <button class="tgl" data-a="theme" id="tgl" aria-label="白と黒の表示を切り替える">◐</button>
 </header>
-<div class="status" id="status" hidden><div class="in num" id="statusIn"></div></div>
+<div class="status" id="status" hidden><div class="stw"><div class="in num" id="statusIn"></div><button class="mst" id="mst" data-m="check" aria-label="今の状態を記録する"></button></div></div>
 <main id="main">
   <div class="wrap" id="vSub"><div class="subsw" role="group" aria-label="表示の切り替え"><button data-a="pv" data-v="table" id="pv-table">この卓</button><button data-a="pv" data-v="roster" id="pv-roster">名簿（全員）</button></div></div>
   <div class="wrap" id="vTable"></div>
   <div class="wrap hl" id="vLog" hidden></div>
+  <div class="wrap" id="vMental" hidden></div>
   <div class="wrap" id="vIcm" hidden></div>
   <div class="wrap" id="vRange" hidden></div>
   <div class="wrap" id="vRoster" hidden></div>
 </main>
 <div class="dock hl" id="hl-dock" hidden><div class="in" id="hl-dockIn"></div></div>
-<nav id="nav"><div class="in"><button data-a="tab" data-t="table" id="tb-table">プレイヤー</button><button data-a="tab" data-t="log" id="tb-log">ログ</button><button data-a="tab" data-t="icm" id="tb-icm">ICM</button><button data-a="tab" data-t="range" id="tb-range">レンジ</button></div></nav>
+<nav id="nav"><div class="in"><button data-a="tab" data-t="table" id="tb-table">プレイヤー</button><button data-a="tab" data-t="log" id="tb-log">ログ</button><button data-a="tab" data-t="icm" id="tb-icm">ICM</button><button data-a="tab" data-t="range" id="tb-range">レンジ</button><button data-a="tab" data-t="mental" id="tb-mental">メンタル</button></div></nav>
+<div class="scrim" id="mt-scrim" hidden><div class="sheet" id="mt-sheet" role="dialog" aria-modal="true"></div></div>
 <div class="scrim hl" id="hl-scrim" hidden><div class="sheet" id="hl-sheet" role="dialog" aria-modal="true"></div></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="row"><button class="btn" data-a="modal-no">キャンセル</button><button class="btn pri" id="modalOk" data-a="modal-ok">OK</button></div></div></div>
@@ -611,15 +653,15 @@ function nextHand(){
 /* ---------- render ---------- */
 function render(){
   const ed=ui.tab==='log'&&HL.editing(),pl=ui.tab==='table';
-  for(const t of ['table','log','icm','range'])$('tb-'+t).classList.toggle('on',ui.tab===t);
+  for(const t of ['table','log','icm','range','mental'])$('tb-'+t).classList.toggle('on',ui.tab===t);
   $('vSub').hidden=!pl;$('vTable').hidden=!(pl&&ui.pv==='table');$('vRoster').hidden=!(pl&&ui.pv==='roster');
-  $('vLog').hidden=ui.tab!=='log';$('vIcm').hidden=ui.tab!=='icm';$('vRange').hidden=ui.tab!=='range';
+  $('vLog').hidden=ui.tab!=='log';$('vIcm').hidden=ui.tab!=='icm';$('vRange').hidden=ui.tab!=='range';$('vMental').hidden=ui.tab!=='mental';
   $('pv-table').classList.toggle('on',ui.pv==='table');$('pv-roster').classList.toggle('on',ui.pv==='roster');
   document.body.classList.toggle('editing',ed);$('nav').hidden=ed;$('hl-dock').hidden=!ed; // while a hand is being entered, the action buttons take the place of the tabs
   const s=ses(),p=s.pay;
   $('seschip').innerHTML=`<span class="tx"><span>${esc([s.level,fc(s.sb)+'/'+fc(s.bb)].filter(Boolean).join(' ・ '))}</span><small>${esc([s.name||'大会名なし',p.left?'残り'+fc(p.left)+'人':''].filter(Boolean).join(' ・ '))}</small></span><i>設定</i>`;
   renderStatus();if(ed)$('status').hidden=true;
-  if(pl){if(ui.pv==='table')renderTable();else renderRoster()}else if(ui.tab==='log')HL.render();else if(ui.tab==='icm')renderIcm();else renderRange();
+  if(pl){if(ui.pv==='table')renderTable();else renderRoster()}else if(ui.tab==='log')HL.render();else if(ui.tab==='icm')renderIcm();else if(ui.tab==='mental')MT.render();else renderRange();
 }
 const band=x=>x==null||!(ses().bb>0)?'':x/ses().bb<=12?'d':x/ses().bb<=25?'w':'';
 function renderStatus(){
@@ -629,7 +671,7 @@ function renderStatus(){
   if(p.left)c.push(`<div><small>残り${o.itm?' / ITM':''}</small><b>${fc(p.left)}${o.itm?' / '+fc(o.itm):''}</b></div>`);
   if(o.bubble)c.push(`<div><small>バブルまで</small><b>あと${o.bubble}人</b></div>`);
   else if(o.next)c.push(`<div><small>次の賞金 ${fm(o.next.amt)}</small><b>あと${o.next.need}人</b></div>`);
-  $('status').hidden=!c.length;$('statusIn').innerHTML=c.join('');
+  $('status').hidden=false;$('statusIn').innerHTML=c.join('');MT.chip();
 }
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const m=$('themeColor');if(m)m.content=t==='dark'?'#131314':'#ffffff'}
 applyTheme(document.documentElement.getAttribute('data-theme')||'light');
@@ -1561,7 +1603,7 @@ const HL=(()=>{
   function setStack(p,v){if(v==null||!(v>=0))delete h.stacks[p];else h.stacks[p]=Math.round(v);touch()}
   function amtVal(){const v=parseFloat(E('amt')?.value);return isFinite(v)?(ui.unit==='bb'?v*h.bb:v):null}
   function amtHint(){const v=parseFloat(E('amt')?.value),el=E('amtCv');if(!el)return;el.textContent=isFinite(v)&&h.bb?(ui.unit==='bb'?fc(v*h.bb)+'点':hnb(v)+'BB'):''}
-  function bookmark(){const x=fresh(true);x.updated=Date.now();hands.unshift(x);store();toast('ハンドに印を付けました。「ログ」であとから入力できます');if(ui.tab==='log'&&u.view==='list')renderList()}
+  function bookmark(quiet){const x=fresh(true);x.updated=Date.now();hands.unshift(x);store();if(quiet!==true)toast('ハンドに印を付けました。「ログ」であとから入力できます');if(ui.tab==='log'&&u.view==='list')renderList();return x.id}
   /* ----- events ----- */
   document.addEventListener('click',async e=>{
     if(e.target.id==='hl-scrim')return closeS();
@@ -1644,6 +1686,153 @@ const HL=(()=>{
     restore(a){hands=a.map(norm);store();h=null;dirty=false;u.view='list';LS.set('assist.hdraft',null)},
     withPlayer:pid=>hands.filter(x=>Object.values(x.pids||{}).includes(pid)),
     async open(id){const x=hands.find(v=>v.id===id);if(!x)return;if(h&&h.id!==x.id&&!await guardLeave('保存していない入力があります。このハンドを開きますか？'))return;ui.tab='log';start(norm(clone(x)))}};
+})();
+
+/* ================= mental game =================
+   Aim: notice the state early (quality of play A/B/C + what is going on), answer it with words and rules that were prepared
+   when calm, and learn the pattern afterwards. Writing at length happens only after the session. */
+const MT=(()=>{
+  const TY=[['runbad','運の悪さが続く'],['injustice','理不尽に感じる'],['hatelose','負けるのが嫌'],['entitle','自分が勝つはず'],['revenge','やり返したい'],['desperate','取り返したい'],['mistake','自分のミス'],['fear','怖さ・緊張'],['tired','疲れ・眠気'],['bored','退屈・惰性'],['cocky','気が大きい'],['distract','気が散る']];
+  const TYN=Object.fromEntries(TY);
+  // starter sentences; they are meant to be replaced by the player's own
+  const SAY={runbad:'短期の結果は運。自分が動かせるのは、次の判断の質だけ。',injustice:'不公平に見えるのは記憶の偏り。相手のミスは、長い目で見れば自分の利益。',hatelose:'正しい判断で負けるのは、負けではない。評価するのは判断。',entitle:'うまい方が毎回勝つゲームではない。優位は長期でしか表れない。',revenge:'狙うのは相手ではなく期待値。特定の相手に固執すると読まれる。',desperate:'取り返す必要はない。今のスタックで最善手を選ぶだけ。',mistake:'ミスは情報。直すのはあとでログで。今は次のハンド。',fear:'怖いのは、賞金が大きい場面だから。感覚で縮こまらず、数字で判断する。',tired:'疲れは判断を雑にする。難しい場面は時間を使い、際どい手は降りる。',bored:'待つのも仕事。相手を1人決めて観察し、記録する。',cocky:'勝っているときほど標準どおり。余計な勝負を増やさない。',distract:'スマホを伏せる。次の1周は、全員のアクションを追う。'};
+  const GDEF={A:'相手のレンジを考えて打てている',B:'自分の手だけを見ている。惰性で打っている',C:'取り返そうとしている。早打ち、雑な判断'};
+  const FLOOR='レンジ表にない手は開けない\n際どい判断は降りる\n大きなブラフはしない\n判断の前に3秒おく';
+  const EFF={2:['効いた','✓'],1:['少し','△'],0:['効かない','✕']};
+  const E=id=>$('mt-'+id);
+  function M(){
+    if(!S.mental||typeof S.mental!=='object')S.mental={};const m=S.mental;
+    m.cfg={a:'',b:'',c:'',floor:FLOOR,focus:'',signs:'',...(m.cfg||{})};if(!m.cfg.says||typeof m.cfg.says!=='object')m.cfg.says={};
+    if(!Array.isArray(m.log))m.log=[];if(!Array.isArray(m.mhh))m.mhh=[];return m;
+  }
+  const say=ty=>(ty&&(M().cfg.says[ty]||SAY[ty]))||'結果ではなく、次の1ハンドの判断に集中する。';
+  const floor=()=>M().cfg.floor.split('\n').map(x=>x.trim()).filter(Boolean);
+  // the current session: newest entries without a gap of five hours, and not older than twelve
+  function today(){const L=M().log;if(!L.length||Date.now()-L[0].t>12*3600e3)return [];const out=[L[0]];for(let i=1;i<L.length;i++){if(out[out.length-1].t-L[i].t>5*3600e3)break;out.push(L[i])}return out}
+  const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'今':m<60?m+'分前':Math.floor(m/60)+'時間前'};
+  const u={sheet:null,ck:null,id:null,cd:null};let bt=[];
+  function chip(){
+    const el=$('mst');if(!el)return;const l=today()[0];
+    el.className='mst '+(l?l.g:'');el.innerHTML=l?`<small>${ago(l.t)}</small><b>状態 ${l.g}</b>`:`<small>メンタル</small><b>記録</b>`;
+  }
+  /* ----- tab ----- */
+  const gb=g=>`<span class="gb ${g}">${g}</span>`;
+  function row(e){return `<button class="li" data-m="open" data-id="${e.id}">${gb(e.g)}<span class="mid"><span class="a">${e.ty?TYN[e.ty]:e.g==='A'?'良い状態':'種類なし'}${e.iv&&(e.ty||e.g!=='A')?` ・ 強さ${e.iv}`:''}</span><span class="b num">${tm(e.t)}${e.lvl?' ・ '+esc(e.lvl):''}${e.bb!=null?' ・ '+e.bb+'BB':''}${e.note?' ・ '+esc(e.note):''}</span></span><span class="r">${e.eff!=null?EFF[e.eff][1]:e.ty?'？':''}</span></button>`}
+  function stats(){
+    const L=M().log;if(L.length<3)return `<div class="hint">記録が3件ほどたまると、どの種類が多いか、どの言葉が効いているかがここに出ます。</div>`;
+    const by={};for(const e of L)if(e.ty){const b=by[e.ty]=by[e.ty]||{n:0,iv:0,ok:0,rated:0};b.n++;b.iv+=e.iv||0;if(e.eff!=null){b.rated++;if(e.eff===2)b.ok++}}
+    const rows=Object.entries(by).sort((a,b)=>b[1].n-a[1].n),max=rows.length?rows[0][1].n:1,g={A:0,B:0,C:0};for(const e of L)g[e.g]++;
+    const st={pre:0,itm:0};for(const e of L)if(e.g!=='A'&&st[e.stage]!=null)st[e.stage]++;
+    return `<div class="gshare num">${['A','B','C'].map(k=>`<div class="${k}" style="flex:${g[k]||0.0001}">${g[k]?k+' '+Math.round(g[k]/L.length*100)+'%':''}</div>`).join('')}</div>
+    ${rows.map(([k,b])=>`<div class="mbar"><div class="t"><span>${TYN[k]}</span><span class="num">${b.n}回 ・ 強さ平均${(b.iv/b.n).toFixed(1)}${b.rated?' ・ 効いた '+b.ok+'/'+b.rated:''}</span></div><div class="bg"><i style="width:${b.n/max*100}%"></i></div>${b.rated>=3&&b.ok/b.rated<0.4?'<div class="warn">この種類の言葉は効いていません。振り返りで言葉を作り直す合図です。</div>':''}</div>`).join('')||'<div class="hint">種類を選んだ記録がまだありません。</div>'}
+    ${st.pre+st.itm?`<p class="fine">崩れた記録の時期：入賞前 ${st.pre}回 ／ 入賞後 ${st.itm}回</p>`:''}`;
+  }
+  function render(){
+    const m=M(),T=today(),l=T[0],bad=T.filter(e=>e.g!=='A');
+    $('vMental').innerHTML=`<section class="card"><button class="btn pri two" data-m="check" style="width:100%;min-height:60px">今の状態を記録する<small>10秒 ・ タップだけ</small></button>
+      <div class="mnow">${l?`直近：${gb(l.g)} ${l.ty?TYN[l.ty]+' ・ 強さ'+l.iv+' ・ ':''}${ago(l.t)}`:'崩れたときだけでなく、良い状態のときも記録すると、差が見えてきます。'}</div></section>
+    <section class="card"><h2>今日の重点<span>プレー中に意識する1〜2個</span></h2><textarea id="mt-focus" rows="2" placeholder="例：BBディフェンスを広げすぎない。リバーは時間を使う">${esc(m.cfg.focus)}</textarea>
+      <details class="why"><summary>プレー前の準備（1分）</summary><ul class="mlist"><li>眠気・空腹・水分を確かめる。足りなければ先に整える。</li><li>Aゲームの自分：${esc(m.cfg.a||GDEF.A)}</li><li>Cゲームの自分：${esc(m.cfg.c||GDEF.C)}</li><li>崩れたときに守ること：${esc(floor().join('／'))}</li>${m.cfg.signs?`<li>自分の初期サイン：${esc(m.cfg.signs)}</li>`:''}</ul></details></section>
+    <section class="card"><h2>今日の記録<span>${T.length}件${bad.length?' ・ 崩れ '+bad.length+'件':''}</span></h2>${T.map(row).join('')||'<div class="hint">まだ記録がありません。休憩のたびに1回記録するのが目安です。</div>'}</section>
+    <section class="card"><h2>終了後の振り返り<span>3分 ・ 落ち着いてから</span></h2><p class="fine" style="margin:0 0 10px">いちばん崩れた場面を1つだけ掘り下げ、次に使う言葉を作ります。プレー中の言葉は、ここで作ったものがいちばん効きます。</p>
+      <button class="btn" data-m="cool" style="width:100%">振り返りを書く</button>${m.mhh.slice(0,3).map(x=>`<div class="nt"><div class="m num">${tm(x.t)}</div><div class="x">${x.ty?`<i>${TYN[x.ty]}</i>`:''}${esc(x.q4||x.q1||'')}</div><button class="del" data-m="mhh-del" data-id="${x.id}" aria-label="この振り返りを削除">✕</button></div>`).join('')}</section>
+    <section class="card"><h2>自分の傾向<span>全${m.log.length}件</span></h2>${stats()}</section>
+    <section class="card"><button class="btn" data-m="cfg" style="width:100%">自分の基準と言葉を編集する</button><p class="fine">A・B・Cゲームの基準、崩れたときに守ること、種類ごとの言葉を、落ち着いているときに自分の言葉で書いておきます。</p></section>`;
+  }
+  /* ----- sheets ----- */
+  const sh=t=>`<div class="grab"></div><div class="shead"><h3>${t}</h3><button class="x" data-m="close">閉じる</button></div>`;
+  function openS(n){u.sheet=n;E('scrim').hidden=false;renderS();E('sheet').scrollTop=0}
+  function closeS(){stopBreath();u.sheet=null;E('scrim').hidden=true;chip();if(ui.tab==='mental')render()}
+  function renderS(){const el=E('sheet');el.innerHTML=u.sheet==='check'?checkHTML():u.sheet==='reset'?resetHTML():u.sheet==='cfg'?cfgHTML():u.sheet==='cool'?coolHTML():''}
+  function checkHTML(){
+    const c=u.ck,m=M().cfg;
+    return sh('今の状態')+`<div class="lab">プレーの質</div>
+    <div class="mg">${['A','B','C'].map(g=>`<button class="${c.g===g?'on':''} ${g}" data-m="g" data-v="${g}"><b>${g}</b><small>${esc(m[g.toLowerCase()]||GDEF[g])}</small></button>`).join('')}</div>
+    <div class="lab">何が起きているか（近いものを1つ。なければ選ばない）</div>
+    <div class="seg">${TY.map(([k,n])=>`<button class="chip ${c.ty===k?'on':''}" data-m="ty" data-v="${k}">${n}</button>`).join('')}</div>
+    <div class="lab">強さ（1 かすかに 〜 5 判断できない）</div>
+    <div class="rsel k5">${[1,2,3,4,5].map(i=>`<button class="chip num ${c.iv===i?'on':''}" data-m="iv" data-v="${i}">${i}</button>`).join('')}</div>
+    <div class="row" style="margin-top:14px"><button class="chip ${c.mark?'on':''}" data-m="mk" style="flex:none">${c.mark?'✓ ':''}今のハンドに印も付ける</button></div>
+    <input id="mt-note" value="${esc(c.note)}" placeholder="ひとこと（任意）" autocomplete="off" aria-label="ひとこと" style="margin-top:8px">
+    <div class="msave"><button class="btn pri" data-m="save" style="width:100%;min-height:52px" ${c.g?'':'disabled'}>${c.g?'記録する':'プレーの質を選んでください'}</button></div>`;
+  }
+  function resetHTML(){
+    const e=M().log.find(x=>x.id===u.id);if(!e)return sh('整える');const hard=e.g==='C'||e.iv>=4;
+    return sh(`${e.g}${e.ty?' ・ '+TYN[e.ty]:''}`)+`<div class="say">${esc(say(e.ty))}</div>
+    ${hard?`<div class="lab">次の1周は、これだけ守る</div><ul class="mlist strong">${floor().map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    <div class="lab">呼吸で落ち着く（約30秒）</div>
+    <div class="breath"><div class="brc" id="mt-br"></div><div class="brt" id="mt-brt">鼻から吸い、もう一度短く吸い足して、口から長く吐きます。3回。</div></div>
+    <button class="btn" data-m="breath" style="width:100%">呼吸を始める</button>
+    ${e.ty?`<div class="lab">上の言葉は効きましたか（あとで答えても構いません）</div><div class="rsel k3">${[2,1,0].map(v=>`<button class="chip ${e.eff===v?'on':''}" data-m="eff" data-v="${v}">${EFF[v][1]} ${EFF[v][0]}</button>`).join('')}</div>`:''}
+    <button class="btn pri" data-m="close" style="width:100%;margin-top:16px;min-height:52px">プレーに戻る</button>
+    <button class="btn ghost" data-m="del" style="width:100%;margin-top:8px">この記録を削除</button>`;
+  }
+  function cfgHTML(){
+    const c=M().cfg;
+    return sh('自分の基準と言葉')+`<p class="fine" style="margin:0">落ち着いているときに、自分の言葉で書きます。空欄のところは、仮の文が使われます。</p>
+    <div class="lab">Aゲーム（最高の状態）の自分</div><input data-mc="a" value="${esc(c.a)}" placeholder="${GDEF.A}" autocomplete="off">
+    <div class="lab">Bゲーム（ふつうの状態）の自分</div><input data-mc="b" value="${esc(c.b)}" placeholder="${GDEF.B}" autocomplete="off">
+    <div class="lab">Cゲーム（最悪の状態）の自分</div><input data-mc="c" value="${esc(c.c)}" placeholder="${GDEF.C}" autocomplete="off">
+    <div class="lab">崩れたときに、これだけは守ること（1行に1つ）</div><textarea data-mc="floor" rows="4">${esc(c.floor)}</textarea>
+    <div class="lab">自分の初期サイン（考え・行動・体の変化）</div><textarea data-mc="signs" rows="2" placeholder="例：チップを乱暴に扱う。相手の顔をにらむ。呼吸が浅くなる">${esc(c.signs)}</textarea>
+    <div class="lab">種類ごとの言葉</div>
+    ${TY.map(([k,n])=>`<label class="mfield">${n}<textarea data-ms="${k}" rows="2" placeholder="${esc(SAY[k])}">${esc(c.says[k]||'')}</textarea></label>`).join('')}
+    <button class="btn pri" data-m="close" style="width:100%;margin-top:16px">閉じる</button>`;
+  }
+  function coolHTML(){
+    const d=u.cd,T=today(),bad=T.filter(e=>e.g!=='A');
+    return sh('終了後の振り返り')+`<div class="paysum">${T.length?`今日の記録 ${T.length}件、崩れ ${bad.length}件${bad.length?'（最大の強さ '+Math.max(...bad.map(e=>e.iv||0))+'）':''}`:'今日の記録はありません。思い出せる範囲で書きます。'}</div>
+    <div class="lab">1. いちばん崩れた場面</div><textarea data-mq="q1" rows="2" placeholder="何が起きて、どうプレーが変わったか">${esc(d.q1)}</textarea>
+    <div class="lab">それはどの種類でしたか</div><div class="seg">${TY.map(([k,n])=>`<button class="chip ${d.ty===k?'on':''}" data-m="cdty" data-v="${k}">${n}</button>`).join('')}</div>
+    <div class="lab">2. そのとき、なぜそう感じたか（頭にあった考え）</div><textarea data-mq="q2" rows="2" placeholder="例：あれだけ有利だったのに負けるのはおかしい">${esc(d.q2)}</textarea>
+    <div class="lab">3. その考えの、どこが違うか</div><textarea data-mq="q3" rows="2" placeholder="例：80%は5回に1回負ける。おかしくはない">${esc(d.q3)}</textarea>
+    <div class="lab">4. 次はどう考えるか（短い一文）</div><textarea data-mq="q4" rows="2" placeholder="例：有利な勝負を作れた。それが自分の仕事">${esc(d.q4)}</textarea>
+    <div class="lab">5. なぜ、それが正しいか</div><textarea data-mq="q5" rows="2">${esc(d.q5)}</textarea>
+    <div class="row" style="margin-top:12px"><button class="chip ${d.use?'on':''}" data-m="cduse" style="flex:none">${d.use?'✓ ':''}4の一文を、この種類の言葉として使う</button></div>
+    <button class="btn pri" data-m="cdsave" style="width:100%;margin-top:14px">保存する</button>`;
+  }
+  function stopBreath(){bt.forEach(clearTimeout);bt=[]}
+  function breath(){
+    stopBreath();const seq=[['in','鼻から吸う',2000],['in2','もう一度、短く吸い足す',1000],['out','口からゆっくり吐く',6000]];let t=0;
+    for(let c=0;c<3;c++)for(const [cls,label,ms] of seq){bt.push(setTimeout(()=>{const b=E('br');if(!b)return;b.className='brc '+cls;E('brt').textContent=`${label}（${c+1}/3）`},t));t+=ms}
+    bt.push(setTimeout(()=>{const b=E('br');if(b){b.className='brc';E('brt').textContent='終わりました。次の1ハンドの判断に集中します。'}},t));
+  }
+  function check(){u.ck={g:null,ty:null,iv:3,mark:false,note:''};openS('check')}
+  document.addEventListener('click',async e=>{
+    if(e.target.id==='mt-scrim')return closeS();
+    const el=e.target.closest('[data-m]');if(!el)return;const a=el.dataset.m,d=el.dataset,m=M();
+    switch(a){
+      case 'check':check();break;
+      case 'close':closeS();break;
+      case 'g':u.ck.g=d.v;u.ck.note=E('note').value;renderS();break;
+      case 'ty':u.ck.ty=u.ck.ty===d.v?null:d.v;u.ck.note=E('note').value;renderS();break;
+      case 'iv':u.ck.iv=+d.v;u.ck.note=E('note').value;renderS();break;
+      case 'mk':u.ck.mark=!u.ck.mark;u.ck.note=E('note').value;renderS();break;
+      case 'save':{const c=u.ck;if(!c.g)break;const s=ses(),H=s.seats[0].stack,o=payInfo(),x={id:uid(),t:Date.now(),lvl:s.level||'',bb:H!=null&&s.bb?+nb(H):null,left:s.pay.left||null,stage:o.bubble?'pre':o.itm&&s.pay.left&&s.pay.left<=o.itm?'itm':'',g:c.g,ty:c.ty,iv:c.iv,note:E('note').value.trim().slice(0,80),eff:null};
+        if(c.mark)x.hid=HL.bookmark(true);m.log.unshift(x);if(m.log.length>2000)m.log.length=2000;save();
+        if(c.g==='A'&&!c.ty){closeS();toast('記録しました');break}u.id=x.id;u.sheet='reset';renderS();E('sheet').scrollTop=0;chip();break}
+      case 'open':u.id=d.id;openS('reset');break;
+      case 'breath':breath();break;
+      case 'eff':{const x=m.log.find(v=>v.id===u.id);if(x){x.eff=x.eff===+d.v?null:+d.v;save();document.querySelectorAll('[data-m="eff"]').forEach(b=>b.classList.toggle('on',+b.dataset.v===x.eff))}break}
+      case 'del':{if(!await ask('この記録を削除しますか？','削除'))break;m.log=m.log.filter(v=>v.id!==u.id);save();closeS();break}
+      case 'cfg':openS('cfg');break;
+      case 'cool':u.cd={q1:'',q2:'',q3:'',q4:'',q5:'',ty:(today().filter(x=>x.ty).sort((a,b)=>b.iv-a.iv)[0]||{}).ty||null,use:true};openS('cool');break;
+      case 'cdty':u.cd.ty=u.cd.ty===d.v?null:d.v;renderS();break;
+      case 'cduse':u.cd.use=!u.cd.use;renderS();break;
+      case 'cdsave':{const c=u.cd;if(!(c.q1+c.q2+c.q3+c.q4+c.q5).trim()){toast('1つ以上、書いてから保存してください');break}m.mhh.unshift({id:uid(),t:Date.now(),ty:c.ty,q1:c.q1,q2:c.q2,q3:c.q3,q4:c.q4,q5:c.q5});
+        const used=c.use&&c.ty&&c.q4.trim();if(used)m.cfg.says[c.ty]=c.q4.trim();save();closeS();toast(used?`保存しました。「${TYN[c.ty]}」の言葉を更新しました`:'保存しました');break}
+      case 'mhh-del':{if(!await ask('この振り返りを削除しますか？','削除'))break;m.mhh=m.mhh.filter(v=>v.id!==d.id);save();render();break}
+    }
+  });
+  document.addEventListener('input',e=>{
+    const t=e.target,m=M();
+    if(t.id==='mt-focus'){m.cfg.focus=t.value;save()}
+    else if(t.dataset.mc){m.cfg[t.dataset.mc]=t.value;save()}
+    else if(t.dataset.ms){const v=t.value.trim();if(v)m.cfg.says[t.dataset.ms]=t.value;else delete m.cfg.says[t.dataset.ms];save()}
+    else if(t.dataset.mq&&u.cd)u.cd[t.dataset.mq]=t.value;
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&u.sheet)closeS()});
+  return {render,chip,check};
 })();
 
 render();if(HL.imported)toast(`MTT LOGのハンド ${HL.imported}件を引き継ぎました`);
