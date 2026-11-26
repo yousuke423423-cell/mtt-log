@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="MTT ASSIST">
 <script>
 (function(){var t=null;try{t=localStorage.getItem("assist.theme")}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})();
-window.MTT_BUILD="2026-11-26 18:41";
+window.MTT_BUILD="2026-11-26 18:57";
 try{var rkm=location.hash.match(/rk=([A-Za-z0-9_-]{43})/);if(rkm)localStorage.setItem("assist.rkPending",rkm[1])}catch(e){}
 (function(){
   function check(){fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
@@ -535,13 +535,14 @@ textarea.paper::placeholder{color:#8f887a}
 .burnbtn{width:100%;min-height:64px;border-radius:14px;background:#c2360f;color:#fff;font-size:21px;font-weight:800;letter-spacing:.3em;text-indent:.3em;box-shadow:0 6px 18px #c2360f55}
 .burnbtn:disabled{background:var(--raise2);color:var(--muted);box-shadow:none}
 .burnbtn:active:not(:disabled){transform:scale(.98)}
-.bstage{position:relative;height:min(62vh,460px);border-radius:14px;background:#0a0a0b;overflow:hidden}
+.bstage{position:relative;height:min(62vh,460px);border-radius:14px;background:#0a0a0b;overflow:hidden;--g:0;box-shadow:0 0 calc(var(--g)*46px) rgba(255,96,20,calc(var(--g)*.65))}
+.bstage::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 120% 90% at 50% 100%,rgba(255,130,30,calc(var(--g)*.60)),rgba(180,30,0,calc(var(--g)*.22)) 55%,transparent 82%)}
 .bstage .burnp{position:absolute;left:9%;right:9%;top:7%;bottom:15%;padding:14px;overflow:hidden;--b:0;
   -webkit-mask-image:linear-gradient(to top,transparent calc(var(--b)*100% - 2%),#000 calc(var(--b)*100% + 5%));mask-image:linear-gradient(to top,transparent calc(var(--b)*100% - 2%),#000 calc(var(--b)*100% + 5%))}
-.bstage .burnp::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,#000 calc(var(--b)*100%),#2a1204e6 calc(var(--b)*100% + 7%),#5a2a0a80 calc(var(--b)*100% + 16%),transparent calc(var(--b)*100% + 30%))}
+.bstage .burnp::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,#ffb347 calc(var(--b)*100% + 1%),#b23c08 calc(var(--b)*100% + 3.5%),#2a1204e6 calc(var(--b)*100% + 9%),#5a2a0a80 calc(var(--b)*100% + 18%),transparent calc(var(--b)*100% + 32%))}
 .bstage .ptx{white-space:pre-wrap;overflow-wrap:anywhere}
 .bstage .burnp img{display:block;width:100%;height:100%;object-fit:contain;object-position:top left}
-.bstage canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none}
+.bstage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
 .bstage .ash{position:absolute;background:#6f6f73;border-radius:1px;opacity:0;animation:ashfall 2.4s ease-in forwards}
 @keyframes ashfall{0%{opacity:.9;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(160px) rotate(140deg)}}
 .bdone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#f4f4f5;text-align:center;padding:20px;animation:bdone 1.2s ease-out}
@@ -1844,25 +1845,45 @@ const MT=(()=>{
     const b=u.bn,el=E('sheet'),reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
     const content=b.mode==='type'?`<div class="ptx">${esc(b.text)}</div>`:`<img src="${b.img||''}" alt="">`;
     b.text='';b.img=null;b.ink=false; // gone from memory as soon as the fire is lit
-    el.innerHTML=sh('完全燃焼')+`<div class="bstage" id="mt-stage"><div class="paper burnp" id="mt-paper">${content}</div><canvas id="mt-fire" width="56" height="84"></canvas><div class="bdone" id="mt-done" hidden><b>燃え尽きました</b><span>書いたものは、もうどこにもありません。</span></div></div>
+    el.innerHTML=sh('完全燃焼')+`<div class="bstage" id="mt-stage"><div class="paper burnp" id="mt-paper">${content}</div><canvas id="mt-fire"></canvas><div class="bdone" id="mt-done" hidden><b>燃え尽きました</b><span>書いたものは、もうどこにもありません。</span></div></div>
     <div id="mt-after" hidden><button class="btn pri" data-m="close" style="width:100%;margin-top:14px;min-height:52px">プレーに戻る</button><button class="btn" data-m="check" style="width:100%;margin-top:8px">今の状態を記録する</button></div>`;
     el.scrollTop=0;const m=M();m.burns=(m.burns||0)+1;save();
     const paper=E('paper'),done=()=>{const p=E('paper');if(p)p.remove();const d=E('done'),a=E('after');if(d)d.hidden=false;if(a)a.hidden=false};
     if(reduce){paper.style.transition='opacity 1.2s';paper.style.opacity='0';setTimeout(done,1300);return}
-    const FW=56,FH=84,fire=new Uint8Array(FW*FH),cv=E('fire'),cx=cv.getContext('2d'),img=cx.createImageData(FW,FH),PAL=[];
-    for(let i=0;i<37;i++){const t=i/36;PAL.push([Math.min(255,Math.round(255*Math.min(1,t*2.3))),Math.round(255*Math.max(0,Math.min(1,(t-.26)*1.7))),Math.round(255*Math.max(0,Math.min(1,(t-.8)*4.5))),i<2?0:Math.min(255,Math.round(70+t*420))])}
-    const t0=performance.now(),ease=x=>x<0?0:x>1?1:x*x*(3-2*x);let ashed=false;
+    // Fire as glowing particles drawn additively: where many overlap the flame turns white-hot, further up it thins to orange and red.
+    const st=E('stage'),cv=E('fire'),W=st.clientWidth,H=st.clientHeight;cv.width=W;cv.height=H;
+    const cx=cv.getContext('2d');
+    const spr=stops=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);for(const [o,col] of stops)gr.addColorStop(o,col);g.fillStyle=gr;g.fillRect(0,0,64,64);return c};
+    const YL=spr([[0,'rgba(255,246,214,.62)'],[.3,'rgba(255,205,96,.40)'],[.7,'rgba(255,140,30,.12)'],[1,'rgba(255,110,20,0)']]),FL=spr([[0,'rgba(255,150,44,.50)'],[.4,'rgba(255,92,18,.30)'],[.75,'rgba(220,40,6,.10)'],[1,'rgba(170,20,0,0)']]),RD=spr([[0,'rgba(226,54,10,.36)'],[.5,'rgba(168,22,2,.18)'],[1,'rgba(110,8,0,0)']]),SP=spr([[0,'rgba(255,252,236,1)'],[.35,'rgba(255,206,110,.7)'],[1,'rgba(255,150,40,0)']]),SM=spr([[0,'rgba(84,84,90,.28)'],[1,'rgba(40,40,44,0)']]);
+    const L=W*.09,R=W*.91,TOP=H*.07,BOT=H*.85,P=[],rnd=Math.random,ease=x=>x<0?0:x>1?1:x*x*(3-2*x);
+    let last=performance.now(),t=0,gone=false,fa=0,sa=0,ma=0;
     const frame=now=>{
-      const cv2=E('fire');if(!cv2)return;const t=(now-t0)/1000;
-      // 0–2.5s smoulder, 2.5–4.5s grows into a blaze, holds, 7.6–9.6s dies down
-      const src=t<2.5?14*ease(t/2.5):t<4.5?14+22*ease((t-2.5)/2):t<7.6?36:36*(1-ease((t-7.6)/2));
-      for(let x=0;x<FW;x++)fire[(FH-1)*FW+x]=Math.max(0,Math.min(36,Math.round(src-(t<2.5?Math.random()*10:Math.random()*3))));
-      for(let x=0;x<FW;x++)for(let y=1;y<FH;y++){const i=y*FW+x,p=fire[i];if(!p)fire[i-FW]=0;else{const r=Math.round(Math.random()*3)&3,d=i-r+1;fire[Math.max(0,d-FW)]=Math.max(0,p-(r&1))}}
-      for(let i=0;i<FW*FH;i++){const c=PAL[fire[i]],o=i*4;img.data[o]=c[0];img.data[o+1]=c[1];img.data[o+2]=c[2];img.data[o+3]=c[3]}
-      cx.putImageData(img,0,0);
-      const p=E('paper');if(p){const bn=t<2.5?.06*ease(t/2.5):.06+1.1*ease((t-2.5)/5);p.style.setProperty('--b',bn.toFixed(3));p.style.filter=`sepia(${Math.min(1,t/5).toFixed(2)}) brightness(${Math.max(.45,1-t/12).toFixed(2)})`;
-        if(bn>=1.1&&!ashed){ashed=true;const st=E('stage');for(let k=0;k<34;k++){const a=document.createElement('i');a.className='ash';a.style.left=(12+Math.random()*76)+'%';a.style.top=(10+Math.random()*60)+'%';a.style.animationDelay=(Math.random()*.9).toFixed(2)+'s';a.style.width=a.style.height=(2+Math.random()*4).toFixed(1)+'px';st.appendChild(a)}p.remove()}}
-      if(t<10.2)raf=requestAnimationFrame(frame);else done();
+      if(!E('fire'))return;const dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;
+      // strength: 0-1.2s a flame takes hold, 1.2-3s it roars up, full blaze, 7.8-9.9s burns out
+      const base=t<1.2?.2*ease(t/1.2):t<3?.2+.8*ease((t-1.2)/1.8):t<7.8?1:1-ease((t-7.8)/2.1),I=Math.max(0,base*(.9+.07*Math.sin(t*12)+.05*Math.sin(t*29+1)));
+      const b=t<1.2?.08*ease(t/1.2):.08+1.07*ease((t-1.2)/5.6),yb=BOT-Math.min(1,b)*(BOT-TOP);
+      const p=E('paper');
+      if(p){p.style.setProperty('--b',b.toFixed(3));p.style.filter=`sepia(${Math.min(1,t/3.5).toFixed(2)}) brightness(${Math.max(.5,1.08-t/10).toFixed(2)})`;
+        if(b>=1.12){gone=true;for(let k=0;k<44;k++){const a=document.createElement('i');a.className='ash';a.style.left=(10+rnd()*80)+'%';a.style.top=(6+rnd()*64)+'%';a.style.animationDelay=(rnd()*1.1).toFixed(2)+'s';a.style.width=a.style.height=(2+rnd()*4.5).toFixed(1)+'px';st.appendChild(a)}p.remove()}}
+      st.style.setProperty('--g',Math.min(1,I*1.1).toFixed(3));
+      // flames rise from the burning edge of the paper and, once the fire has taken, from the whole floor of the stage
+      fa+=(110+900*I)*dt;while(fa>=1){fa--;if(P.length>=900)continue;const floor=gone||rnd()<.12+I*.5,k=.45+I;
+        P.push({k:0,x:floor?-10+rnd()*(W+20):L-12+rnd()*(R-L+24),y:floor?H+18:yb+4+rnd()*14,vx:(rnd()-.5)*70,vy:-(150+rnd()*260)*(.45+I),life:.5+rnd()*.8,age:0,s:(34+rnd()*74)*k,ph:rnd()*6.3})}
+      sa+=(8+110*I)*dt;while(sa>=1){sa--;P.push({k:2,x:gone||rnd()<.4?rnd()*W:L+rnd()*(R-L),y:gone?H:rnd()<.4?H:yb,vx:(rnd()-.5)*240,vy:-(260+rnd()*420)*(.6+.7*I),life:.8+rnd()*1,age:0,s:4+rnd()*5,ph:rnd()*6.3})}
+      if(t>2.6){ma+=(t>7.4?30:8)*dt;while(ma>=1){ma--;P.push({k:3,x:W*.1+rnd()*W*.8,y:H*(.05+rnd()*.5),vx:(rnd()-.5)*22,vy:-(24+rnd()*32),life:1.6+rnd()*1.2,age:0,s:80+rnd()*70,ph:0})}}
+      cx.clearRect(0,0,W,H);
+      for(let pass=0;pass<2;pass++){ // smoke first (plain), then everything that glows (additive)
+        cx.globalCompositeOperation=pass?'lighter':'source-over';
+        for(let n=P.length-1;n>=0;n--){const q=P[n];if((q.k===3)===(pass===1))continue;
+          const a=q.age/q.life;if(a>=1){P.splice(n,1);continue}
+          if(q.k===3){const s=q.s*(1+.6*a);cx.globalAlpha=Math.min(1,a*4)*(1-a)*.8;cx.drawImage(SM,q.x-s/2,q.y-s/2,s,s);continue}
+          if(q.k===2){cx.globalAlpha=(1-a)*(.65+.35*Math.sin(q.age*38+q.ph));cx.drawImage(SP,q.x-q.s/2,q.y-q.s/2,q.s,q.s);continue}
+          const sway=Math.sin(q.age*7+q.ph)*14*a,s=q.s*(1-.5*a),w=s*(.86-.2*a),hgt=s*(1.15+.5*a); // stretched upward as it rises
+          cx.globalAlpha=Math.min(1,a*10)*Math.pow(1-a,1.25);
+          cx.drawImage(a<.28?YL:a<.62?FL:RD,q.x+sway-w/2,q.y-hgt/2,w,hgt)}}
+      for(const q of P){q.age+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;if(q.k===2)q.vy+=90*dt;else if(q.k===0){q.vy-=260*dt*(.4+I);q.vx*=(1-1.6*dt)}}
+      cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
+      if(t<10.4)raf=requestAnimationFrame(frame);else{cx.clearRect(0,0,W,H);st.style.setProperty('--g','0');done()}
     };
     raf=requestAnimationFrame(frame);
   }
